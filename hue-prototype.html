@@ -545,27 +545,47 @@ body {
 .ward-toprow {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 0 24px 14px;
+  align-items: flex-start;
+  padding: 6px 24px 4px;
 }
 .ward-toprow h1 {
   font-family: var(--font-display);
   font-size: 28px;
   font-weight: 400;
   color: var(--text-1);
+  line-height: 1.2;
 }
+.ward-toprow-sub { font-size: 13px; color: var(--text-2); margin-top: 3px; }
 .add-btn {
-  width: 36px; height: 36px;
+  display: flex; align-items: center; gap: 6px;
   background: var(--s-accent);
-  border: none;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: #fff;
+  border: none; border-radius: 100px;
+  padding: 8px 16px;
+  color: #fff; font-family: var(--font-body);
+  font-size: 13px; font-weight: 500;
+  cursor: pointer; flex-shrink: 0;
+  margin-top: 4px;
 }
-.add-btn svg { width: 18px; height: 18px; stroke-width: 2.5; }
+.add-btn svg { width: 16px; height: 16px; stroke-width: 2.5; }
+.ward-tabs {
+  display: flex; gap: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  margin-bottom: 14px;
+}
+.ward-tab {
+  font-family: var(--font-body); font-size: 13px; font-weight: 500;
+  color: var(--text-3); background: none; border: none;
+  padding: 10px 0; margin-right: 20px;
+  cursor: pointer; position: relative;
+}
+.ward-tab.on { color: var(--text-1); }
+.ward-tab.on::after {
+  content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+  height: 2px; background: var(--text-1); border-radius: 2px;
+}
+.ward-hint { padding: 0 24px 12px; font-family: var(--font-display); font-style: italic; font-size: 13px; color: var(--text-2); }
+.ward-hint + .chip-row { padding-top: 2px; }
 
 .ward-grid {
   display: grid;
@@ -1066,11 +1086,19 @@ body {
   <div id="s-wardrobe" class="screen">
     <div class="ward-toprow">
       <div>
-        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)">My Wardrobe</div>
-        <h1>24 items</h1>
+        <h1>My Wardrobe</h1>
+        <div class="ward-toprow-sub">15 items · 11 season-aligned</div>
       </div>
-      <button class="add-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button class="add-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg> Add Item</button>
     </div>
+
+    <div class="ward-tabs">
+      <button class="ward-tab on">My Items</button>
+      <button class="ward-tab">Capsule Blueprint</button>
+      <button class="ward-tab">Gap Analysis</button>
+    </div>
+
+    <div class="ward-hint">The more pieces you add, the better we can assess your needs</div>
 
     <div class="chip-row">
       <button class="chip on" onclick="chipToggle(this)">All</button>
@@ -1078,6 +1106,7 @@ body {
       <button class="chip" onclick="chipToggle(this)">Bottoms</button>
       <button class="chip" onclick="chipToggle(this)">Dresses</button>
       <button class="chip" onclick="chipToggle(this)">Outerwear</button>
+      <button class="chip" onclick="chipToggle(this)">Accessories</button>
     </div>
 
     <div class="ward-grid">
