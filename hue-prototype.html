@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>hue. — Personal Color Stylist</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ========================
+   DESIGN TOKENS
+======================== */
+:root {
+  --bg: #FAFAF8;
+  --surface: #FFFFFF;
+  --border: #EBEBEB;
+  --text-1: #1A1A18;
+  --text-2: #6B6B65;
+  --text-3: #ADADAA;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Inter', -apple-system, sans-serif;
+
+  /* Season accent (swapped per selection) */
+  --s-bg: #F5EEE6;
+  --s-accent: #8B4A2A;
+  --s-light: #F0DDD0;
+}
+[data-season="light-spring"]  { --s-bg:#FDF2EE; --s-accent:#C47A5E; --s-light:#FADDCE; }
+[data-season="true-spring"]   { --s-bg:#FEF6EC; --s-accent:#D4724A; --s-light:#FAEADA; }
+[data-season="bright-spring"] { --s-bg:#FFF5F0; --s-accent:#D94F3D; --s-light:#FFE0DC; }
+[data-season="light-summer"]  { --s-bg:#F0F7FF; --s-accent:#7AAFE6; --s-light:#E0F2FF; }
+[data-season="true-summer"]   { --s-bg:#F4F1FA; --s-accent:#8B7EC0; --s-light:#E8E2F5; }
+[data-season="soft-summer"]   { --s-bg:#F0EEF4; --s-accent:#7B8BA6; --s-light:#E0E8F0; }
+[data-season="soft-autumn"]   { --s-bg:#F5F0E8; --s-accent:#9A7A50; --s-light:#EDE0CC; }
+[data-season="true-autumn"]   { --s-bg:#FBF3E4; --s-accent:#B5600A; --s-light:#F5DFB8; }
+[data-season="dark-winter"]   { --s-bg:#EEEEF4; --s-accent:#3A2860; --s-light:#E0D8F0; }
+[data-season="true-winter"]   { --s-bg:#EEF5F3; --s-accent:#0F52BA; --s-light:#D6E8FF; }
+[data-season="bright-winter"] { --s-bg:#F0F8FF; --s-accent:#CC0066; --s-light:#FFD6EA; }
+
+/* ========================
+   RESET + BODY
+======================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-body);
+  background: #D8D8D4;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 32px 20px;
+}
+
+/* ========================
+   APP SHELL
+======================== */
+.app {
+  width: 390px;
+  height: 844px;
+  background: var(--bg);
+  border-radius: 48px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.22), inset 0 0 0 1px rgba(255,255,255,0.2);
+}
+
+/* ========================
+   STATUS BAR
+======================== */
+.statusbar {
+  height: 50px;
+  padding: 16px 28px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.statusbar-icons { display: flex; gap: 5px; align-items: center; font-size: 12px; }
+
+/* ========================
+   SCREENS
+======================== */
+.screen {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.screen::-webkit-scrollbar { display: none; }
+.screen.active { display: flex; }
+
+/* ========================
+   BOTTOM NAV
+======================== */
+.nav {
+  height: 80px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 4px 16px;
+  flex-shrink: 0;
+}
+.nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  padding: 8px 14px;
+  border-radius: 12px;
+  transition: color 0.15s;
+}
+.nav-btn svg { width: 22px; height: 22px; stroke-width: 1.5; }
+.nav-btn.on { color: var(--s-accent); }
+
+/* ========================
+   SHARED PIECES
+======================== */
+.pg-head {
+  padding: 6px 24px 16px;
+  flex-shrink: 0;
+}
+.pg-head h1 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--text-1);
+  line-height: 1.2;
+}
+.pg-head p { font-size: 13px; color: var(--text-2); margin-top: 3px; }
+
+.eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--s-accent);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.tag-mute { background: var(--border); color: var(--text-2); }
+.tag-accent { background: var(--s-light); color: var(--s-accent); }
+
+.chip-row {
+  display: flex;
+  gap: 7px;
+  padding: 0 24px 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.chip-row::-webkit-scrollbar { display: none; }
+.chip {
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  font-family: var(--font-body);
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.chip.on { background: var(--s-accent); border-color: var(--s-accent); color: #fff; }
+
+.sec-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0 24px;
+  margin-bottom: 12px;
+}
+.sec-head h2 {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text-1);
+}
+.see-all {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--s-accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+/* product card */
+.pcard {
+  width: 152px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.pcard-img {
+  width: 100%;
+  aspect-ratio: 3/4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.pcard-img .dot {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.55);
+}
+.heart {
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 30px; height: 30px;
+  background: #fff;
+  border: none;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.heart svg { width: 14px; height: 14px; color: var(--text-3); }
+.heart.saved svg { color: var(--s-accent); fill: var(--s-accent); }
+.pcard-info { padding: 10px 12px 12px; }
+.pcard-brand { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); }
+.pcard-name { font-size: 13px; color: var(--text-1); margin-top: 2px; line-height: 1.3; }
+.pcard-price { font-size: 12px; color: var(--text-2); margin-top: 4px; }
+
+.hscroll {
+  display: flex;
+  gap: 10px;
+  padding: 0 24px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.hscroll::-webkit-scrollbar { display: none; }
+
+.sec-gap { margin-bottom: 28px; }
+
+/* ========================
+   ONBOARDING
+======================== */
+#s-onboarding {
+  background: var(--bg);
+}
+.ob-top {
+  padding: 12px 24px 20px;
+  text-align: center;
+}
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--text-1);
+}
+.ob-top p {
+  font-size: 14px;
+  color: var(--text-2);
+  margin-top: 6px;
+  line-height: 1.6;
+}
+.season-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 24px;
+}
+.sopt {
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.18s;
+  position: relative;
+}
+.sopt.on { border-color: var(--s-accent); }
+.sopt.on::after {
+  content: '';
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 20px; height: 20px;
+  background: var(--s-accent);
+  border-radius: 50%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E");
+  background-size: 12px;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.spal { height: 56px; display: flex; }
+.spal div { flex: 1; }
+.slabel { padding: 9px 11px; background: var(--surface); }
+.slabel .sfam { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: var(--text-3); }
+.slabel .sname { font-size: 13px; font-weight: 500; color: var(--text-1); margin-top: 1px; }
+.ob-cta {
+  padding: 20px 24px 0;
+  margin-top: auto;
+}
+.ob-cta button {
+  width: 100%;
+  padding: 15px;
+  border-radius: 100px;
+  background: var(--text-1);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+}
+
+/* ========================
+   HOME
+======================== */
+.home-greeting {
+  padding: 4px 24px 20px;
+}
+.home-greeting .season-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--s-accent);
+}
+.home-greeting h1 {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 400;
+  color: var(--text-1);
+  margin-top: 3px;
+  line-height: 1.2;
+}
+
+/* featured brand block */
+.feat {
+  margin: 0 24px;
+  background: var(--s-bg);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.feat-top { padding: 18px 20px 0; }
+.feat-top h3 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--text-1);
+  margin-top: 4px;
+}
+.feat-top p { font-size: 13px; color: var(--text-2); margin-top: 5px; line-height: 1.5; }
+.feat-dots {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 3px;
+  margin-top: 14px;
+}
+.feat-dot-cell {
+  aspect-ratio: 1;
+  background: rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.feat-dot-cell span {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  display: block;
+}
+.feat-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 20px 16px;
+}
+.feat-foot p { font-size: 12px; color: var(--text-2); }
+.btn-sm {
+  padding: 7px 16px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  font-family: var(--font-body);
+}
+.btn-dark { background: var(--text-1); color: #fff; }
+.btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text-1); }
+
+/* inspo grid */
+.inspo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  padding: 0 24px;
+}
+.igrid-item {
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+}
+.igrid-item.tall { grid-row: span 2; }
+.igrid-bg {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.igrid-item.tall .igrid-bg { aspect-ratio: unset; height: 100%; min-height: 200px; }
+.igrid-swatches { display: flex; gap: 4px; }
+.igrid-dot { width: 18px; height: 18px; border-radius: 50%; }
+.igrid-label { font-size: 11px; color: var(--text-2); }
+
+/* ========================
+   DISCOVER
+======================== */
+.brand-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 0 24px;
+}
+.bcard {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.blogo {
+  width: 46px; height: 46px;
+  border-radius: 12px;
+  background: var(--s-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--s-accent);
+  flex-shrink: 0;
+}
+.binfo { flex: 1; min-width: 0; }
+.bname { font-size: 15px; font-weight: 500; color: var(--text-1); }
+.bmeta { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+.bscore { display: flex; align-items: center; gap: 8px; margin-top: 7px; }
+.bbar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.bbar-fill { height: 100%; background: var(--s-accent); border-radius: 2px; }
+.bpct { font-size: 11px; color: var(--text-2); white-space: nowrap; }
+
+/* ========================
+   CAPSULE
+======================== */
+.cat-tabs {
+  display: flex;
+  gap: 7px;
+  padding: 0 24px 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.cat-tabs::-webkit-scrollbar { display: none; }
+.ctab {
+  padding: 7px 15px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-2);
+  font-family: var(--font-body);
+  flex-shrink: 0;
+}
+.ctab.on { background: var(--text-1); border-color: var(--text-1); color: #fff; }
+
+.cap-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 24px;
+}
+.ccard {
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.ccard-img {
+  aspect-ratio: 3/4;
+  background: var(--s-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.ccard-img .dot {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.5);
+}
+.tier {
+  position: absolute;
+  bottom: 7px; left: 7px;
+  padding: 3px 8px;
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  backdrop-filter: blur(4px);
+}
+.ccard-info { padding: 9px 11px 11px; }
+.ccard-brand { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-3); }
+.ccard-name { font-size: 13px; color: var(--text-1); margin-top: 2px; line-height: 1.3; }
+.ccard-why { font-size: 11px; color: var(--s-accent); margin-top: 3px; font-style: italic; }
+
+/* ========================
+   WARDROBE
+======================== */
+.ward-toprow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px 14px;
+}
+.ward-toprow h1 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--text-1);
+}
+.add-btn {
+  width: 36px; height: 36px;
+  background: var(--s-accent);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+}
+.add-btn svg { width: 18px; height: 18px; stroke-width: 2.5; }
+
+.ward-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+  padding: 0 24px;
+}
+.witem {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--s-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+}
+.witem .ws {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.5);
+}
+.wflag {
+  position: absolute; bottom: 5px; left: 5px;
+  background: rgba(26, 26, 24, 0.72); color: #fff;
+  font-family: var(--font-body); font-size: 8px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 2px 6px; border-radius: 100px; line-height: 1;
+  backdrop-filter: blur(4px);
+}
+.witem-add {
+  background: transparent;
+  border: 2px dashed #CFCFCA;
+  border-radius: 10px;
+  cursor: pointer;
+  aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+.witem-add svg { width: 22px; height: 22px; stroke: #CFCFCA; stroke-width: 2; }
+
+.ward-stat {
+  padding: 16px 24px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.ward-stat-row { display: flex; align-items: center; gap: 8px; }
+.ward-stat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.ward-stat span { font-size: 13px; color: var(--text-2); }
+
+/* ========================
+   MY SEASON
+======================== */
+.season-hero-card {
+  margin: 0 24px;
+  background: var(--s-bg);
+  border-radius: 24px;
+  padding: 22px;
+}
+.season-hero-card h2 {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--text-1);
+  margin-top: 4px;
+}
+.archetype {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--text-2);
+  margin-top: 3px;
+}
+.pal-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 18px;
+}
+.pal-row .ps { flex: 1; height: 46px; border-radius: 10px; }
+
+.full-pal {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.full-pal .fp { aspect-ratio: 1; border-radius: 12px; }
+
+.metals-row { display: flex; gap: 10px; }
+.metal {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border-radius: 12px;
+}
+.mdot { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; }
+.metal span { font-size: 13px; font-weight: 500; color: var(--text-1); }
+
+.avoid-list { display: flex; flex-direction: column; gap: 7px; }
+.avoid-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px;
+  background: var(--surface);
+  border-radius: 12px;
+}
+.avoid-swatch { width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0; }
+.avoid-item p { font-size: 13px; font-weight: 500; color: var(--text-1); }
+.avoid-item span { font-size: 12px; color: var(--text-2); }
+
+.season-sec {
+  padding: 0 24px;
+  margin-top: 24px;
+}
+.season-sec h3 {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text-1);
+  margin-bottom: 12px;
+}
+
+/* Attribute chips */
+.attr-row { display: flex; gap: 8px; }
+.attr-chip { flex: 1; background: var(--surface); border-radius: 14px; padding: 12px 8px; text-align: center; }
+.attr-chip .av { font-size: 14px; font-weight: 600; color: var(--text-1); }
+.attr-chip .ak { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); margin-top: 3px; }
+
+/* About text */
+.about-text { font-size: 13px; color: var(--text-2); line-height: 1.75; background: var(--surface); padding: 16px; border-radius: 16px; }
+
+/* Trait list */
+.trait-list { display: flex; flex-direction: column; gap: 8px; }
+.trait-item { background: var(--surface); border-radius: 14px; padding: 12px 14px; display: flex; gap: 10px; }
+.ti-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--s-accent); min-width: 38px; margin-top: 1px; flex-shrink: 0; }
+.ti-text { font-size: 13px; color: var(--text-2); line-height: 1.5; }
+
+/* Named swatches */
+.named-swatches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.nswatch .ns-color { aspect-ratio: 4/3; border-radius: 10px; }
+.nswatch .ns-name { font-size: 10px; color: var(--text-2); text-align: center; margin-top: 5px; line-height: 1.3; font-weight: 500; }
+
+/* Stones */
+.stones-row { display: flex; gap: 7px; flex-wrap: wrap; }
+.stone-chip { display: flex; align-items: center; gap: 6px; padding: 7px 12px; background: var(--surface); border-radius: 100px; }
+.stone-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.stone-chip span { font-size: 12px; font-weight: 500; color: var(--text-2); }
+
+/* Pattern guide */
+.pat-row { display: flex; flex-direction: column; gap: 7px; }
+.pat-item { display: flex; gap: 10px; align-items: flex-start; background: var(--surface); border-radius: 14px; padding: 12px; }
+.pat-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+.pat-icon.yes { background: #F0FAF4; }
+.pat-icon.no { background: #FFF0F0; }
+.pat-txt .pt-title { font-size: 13px; font-weight: 500; color: var(--text-1); }
+.pat-txt .pt-desc { font-size: 11px; color: var(--text-2); margin-top: 2px; line-height: 1.4; }
+
+/* Outfit formula */
+.formula-card { background: var(--s-bg); border-radius: 16px; padding: 16px; }
+.formula-card h4 { font-family: var(--font-display); font-size: 16px; font-weight: 400; color: var(--text-1); }
+.formula-card p { font-size: 13px; color: var(--text-2); margin-top: 6px; line-height: 1.6; }
+.combo-row { display: flex; gap: 4px; margin-top: 14px; height: 28px; }
+.combo-row .csw { flex: 1; border-radius: 6px; }
+
+/* Comparison */
+.compare-block { background: var(--surface); border-radius: 16px; padding: 14px; }
+.compare-block .cb-title { font-size: 12px; font-weight: 700; color: var(--text-1); margin-bottom: 5px; }
+.compare-block .cb-desc { font-size: 12px; color: var(--text-2); line-height: 1.5; }
+.compare-pals { display: flex; gap: 3px; height: 16px; margin-top: 10px; }
+.compare-pals .cp { flex: 1; border-radius: 3px; }
+
+/* Palette groups */
+.pal-group { margin-bottom: 18px; }
+.pal-group:last-child { margin-bottom: 0; }
+.pal-group-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--text-3); margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<div class="app" id="app" data-season="dark-autumn">
+
+  <!-- STATUS BAR -->
+  <div class="statusbar">
+    <span>9:41</span>
+    <div class="statusbar-icons">
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="6" width="3" height="6" rx="1"/><rect x="4.5" y="3.5" width="3" height="8.5" rx="1"/><rect x="9" y="1.5" width="3" height="10.5" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1" opacity="0.3"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-linecap="round"><circle cx="8" cy="11" r="1" fill="currentColor" stroke="none"/><path d="M5.5 8.3C6.3 7.5 7.1 7 8 7s1.7.5 2.5 1.3" stroke-width="1.4"/><path d="M3 5.5C4.5 4 6.2 3 8 3s3.5 1 5 2.5" stroke-width="1.4"/><path d="M1 3C3 1.2 5.4 0 8 0s5 1.2 7 3" stroke-width="1.4" opacity="0.4"/></svg>
+      <svg width="26" height="13" viewBox="0 0 26 13" fill="none"><rect x="0.5" y="0.5" width="22" height="12" rx="3.5" stroke="currentColor" stroke-opacity="0.35"/><rect x="2" y="2" width="17" height="9" rx="2" fill="currentColor"/><path d="M24 4.5v4a2 2 0 0 0 0-4z" fill="currentColor" opacity="0.4"/></svg>
+    </div>
+  </div>
+
+  <!-- ==============================
+       SCREEN: ONBOARDING
+  ============================== -->
+  <div id="s-onboarding" class="screen active">
+    <div class="ob-top">
+      <div class="wordmark">hue.</div>
+      <p>Your personal color stylist.<br>Select your season to begin.</p>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 24px 10px;">
+      <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);">Choose your season</span>
+      <span style="font-size:11px;color:var(--text-3);">12 sub-types</span>
+    </div>
+
+    <div class="season-grid">
+      <div class="sopt" onclick="pickSeason(this,'true-spring','Spring','True Spring')">
+        <div class="spal"><div style="background:#F4A460"></div><div style="background:#F0C040"></div><div style="background:#7DB87A"></div><div style="background:#E8834A"></div></div>
+        <div class="slabel"><div class="sfam">Spring</div><div class="sname">True Spring</div></div>
+      </div>
+      <div class="sopt" onclick="pickSeason(this,'true-spring','Spring','Light Spring')">
+        <div class="spal"><div style="background:#FADADD"></div><div style="background:#F7E6B8"></div><div style="background:#B8E0C4"></div><div style="background:#FAD5A5"></div></div>
+        <div class="slabel"><div class="sfam">Spring</div><div class="sname">Light Spring</div></div>
+      </div>
+      <div class="sopt" onclick="pickSeason(this,'true-spring','Spring','Warm Spring')">
+        <div class="spal"><div style="background:#E8934A"></div><div style="background:#D4784A"></div><div style="background:#8ABB78"></div><div style="background:#C8923C"></div></div>
+        <div class="slabel"><div class="sfam">Spring</div><div class="sname">Warm Spring</div></div>
+      </div>
+      <div class="sopt" onclick="pickSeason(this,'soft-summer','Summer','True Summer')">
+        <div class="spal"><div style="background:#C4A8B8"></div><div style="background:#8FA3B1"></div><div style="background:#B5C4C1"></div><div style="background:#9B8FA8"></div></div>
+        <div class="slabel"><div class="sfam">Summer</div><div class="sname">True Summer</div></div>
+      </div>
+      <div class="sopt" onclick="pickSeason(this,'soft-summer','Summer','Soft Summer')">
+        <div class="spal"><div style="background:#C4B8C0"></div><div style="background:#A8BCC4"></div><div style="background:#C8C4D0"></div><div style="background:#B8C8C0"></div></div>
+        <div class="slabel"><div class="sfam">Summer</div><div class="sname">Soft Summer</div></div>
+      </div>
+      <div class="sopt" onclick="pickSeason(this,'soft-summer','Summer','Light Summer')">
+        <div class="spal"><div style="background:#D4C8D8"></div><div style="background:#C0D4E0"></div><div style="background:#E0D0DC"></div><div style="background:#C8DCE0"></div></div>
+        <div class="slabel"><div class="sfam">Summer</div><div class="sname">Light Summer</div></div>
+      </div>
+      <div class="sopt on" onclick="pickSeason(this,'dark-autumn','Autumn','Dark Autumn')">
+        <div class="spal"><div style="background:#8B4A2A"></div><div style="background:#3D5A3E"></div><div style="background:#C4956A"></div><div style="background:#6B3A2A"></div></div>
+        <div class="slabel"><div class="sfam">Autumn</div><div class="sname">Dark Autumn</div></div>
+      </div>
+      <div class="sopt" onclick="pickSeason(this,'dark-autumn','Autumn','True Autumn')">
+        <div class="spal"><div style="background:#B56A30"></div><div style="background:#4A6840"></div><div style="background:#D4944A"></div><div style="background:#7A4530"></div></div>
+        <div class="slabel"><div class="sfam">Autumn</div><div class="sname">True Autumn</div></div>
+      </div>
+      <div class="sopt" onclick="pickSeason(this,'dark-autumn','Autumn','Soft Autumn')">
+        <div class="spal"><div style="background:#C4906A"></div><div style="background:#7A9070"></div><div style="background:#D4B08A"></div><div style="background:#A07060"></div></div>
+        <div class="slabel"><div class="sfam">Autumn</div><div class="sname">Soft Autumn</div></div>
+      </div>
+      <div class="sopt" onclick="pickSeason(this,'dark-winter','Winter','True Winter')">
+        <div class="spal"><div style="background:#1A1A2E"></div><div style="background:#FFFFFF"></div><div style="background:#E40000"></div><div style="background:#0070D4"></div></div>
+        <div class="slabel"><div class="sfam">Winter</div><div class="sname">True Winter</div></div>
+      </div>
+      <div class="sopt" onclick="pickSeason(this,'dark-winter','Winter','Dark Winter')">
+        <div class="spal"><div style="background:#1A1A30"></div><div style="background:#6A2040"></div><div style="background:#2A4070"></div><div style="background:#3A1830"></div></div>
+        <div class="slabel"><div class="sfam">Winter</div><div class="sname">Dark Winter</div></div>
+      </div>
+      <div class="sopt" onclick="pickSeason(this,'dark-winter','Winter','Bright Winter')">
+        <div class="spal"><div style="background:#0050C0"></div><div style="background:#E00060"></div><div style="background:#00A0A0"></div><div style="background:#7000C0"></div></div>
+        <div class="slabel"><div class="sfam">Winter</div><div class="sname">Bright Winter</div></div>
+      </div>
+    </div>
+
+    <div class="ob-cta">
+      <button onclick="enterApp()">Start Discovering →</button>
+    </div>
+    <div style="height:20px"></div>
+  </div>
+
+  <!-- ==============================
+       SCREEN: HOME
+  ============================== -->
+  <div id="s-home" class="screen">
+    <div class="home-greeting">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div class="season-label" id="home-season-lbl">Dark Autumn</div>
+          <h1 style="margin-top:4px">Good morning,<br>Danielle.</h1>
+        </div>
+        <button onclick="go('onboarding')" title="Change season" style="margin-top:2px;width:36px;height:36px;background:var(--s-light);border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--s-accent)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- New In For You -->
+    <div class="sec-gap">
+      <div class="sec-head">
+        <h2>New In For You</h2>
+        <button class="see-all">See all</button>
+      </div>
+      <div class="hscroll">
+        <div class="pcard">
+          <div class="pcard-img" style="background:#8B4A2A18"><div class="dot" style="background:#8B4A2A"></div><button class="heart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div>
+          <div class="pcard-info"><div class="pcard-brand">COS</div><div class="pcard-name">Wool Blazer in Terracotta</div><div class="pcard-price">£185</div></div>
+        </div>
+        <div class="pcard">
+          <div class="pcard-img" style="background:#3D5A3E18"><div class="dot" style="background:#3D5A3E"></div><button class="heart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div>
+          <div class="pcard-info"><div class="pcard-brand">ARKET</div><div class="pcard-name">Ribbed Knit in Forest</div><div class="pcard-price">£89</div></div>
+        </div>
+        <div class="pcard">
+          <div class="pcard-img" style="background:#C4956A18"><div class="dot" style="background:#C4956A"></div><button class="heart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div>
+          <div class="pcard-info"><div class="pcard-brand">Madewell</div><div class="pcard-name">Camel Midi Skirt</div><div class="pcard-price">$98</div></div>
+        </div>
+        <div class="pcard">
+          <div class="pcard-img" style="background:#2C241618"><div class="dot" style="background:#2C2416"></div><button class="heart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div>
+          <div class="pcard-info"><div class="pcard-brand">Everlane</div><div class="pcard-name">Chocolate Trench Coat</div><div class="pcard-price">$298</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Featured Brand -->
+    <div class="sec-gap">
+      <div class="sec-head" style="margin-bottom:10px">
+        <h2>Featured Brand</h2>
+      </div>
+      <div class="feat">
+        <div class="feat-top">
+          <div class="eyebrow">This Week</div>
+          <h3>Aritzia</h3>
+          <p>Quiet luxury with warm neutrals that align beautifully with your Autumn palette.</p>
+        </div>
+        <div class="feat-dots">
+          <div class="feat-dot-cell"><span style="background:#8B4A2A"></span></div>
+          <div class="feat-dot-cell"><span style="background:#C4956A"></span></div>
+          <div class="feat-dot-cell"><span style="background:#3D5A3E"></span></div>
+        </div>
+        <div class="feat-foot">
+          <p>4 new pieces this week</p>
+          <button class="btn-sm btn-dark">Explore</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Your Capsule Picks -->
+    <div class="sec-gap">
+      <div class="sec-head">
+        <h2>Your Capsule Picks</h2>
+        <button class="see-all">See all</button>
+      </div>
+      <div class="hscroll">
+        <div class="pcard">
+          <div class="pcard-img" style="background:#2C241618"><div class="dot" style="background:#2C2416"></div></div>
+          <div class="pcard-info"><div class="pcard-brand">COS</div><div class="pcard-name">Oversized Wool Coat</div><div class="pcard-price">£360</div></div>
+        </div>
+        <div class="pcard">
+          <div class="pcard-img" style="background:#9B735518"><div class="dot" style="background:#9B7355"></div></div>
+          <div class="pcard-info"><div class="pcard-brand">Everlane</div><div class="pcard-name">Camel Wide-Leg Trousers</div><div class="pcard-price">$118</div></div>
+        </div>
+        <div class="pcard">
+          <div class="pcard-img" style="background:#B86B3C18"><div class="dot" style="background:#B86B3C"></div></div>
+          <div class="pcard-info"><div class="pcard-brand">Aritzia</div><div class="pcard-name">Terracotta Wrap Dress</div><div class="pcard-price">$168</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Style Inspiration -->
+    <div class="sec-gap">
+      <div class="sec-head">
+        <h2>Style Inspiration</h2>
+        <button class="see-all">See all</button>
+      </div>
+      <div class="inspo-grid">
+        <div class="igrid-item tall">
+          <div class="igrid-bg" style="background:#8B4A2A14">
+            <div class="igrid-swatches"><div class="igrid-dot" style="background:#8B4A2A"></div><div class="igrid-dot" style="background:#C4956A"></div><div class="igrid-dot" style="background:#3D5A3E"></div></div>
+            <div class="igrid-label">Autumn Evening</div>
+          </div>
+        </div>
+        <div class="igrid-item">
+          <div class="igrid-bg" style="background:#3D5A3E14">
+            <div class="igrid-swatches"><div class="igrid-dot" style="background:#3D5A3E"></div><div class="igrid-dot" style="background:#9B7355"></div></div>
+            <div class="igrid-label">Casual Friday</div>
+          </div>
+        </div>
+        <div class="igrid-item">
+          <div class="igrid-bg" style="background:#C4956A14">
+            <div class="igrid-swatches"><div class="igrid-dot" style="background:#C4956A"></div><div class="igrid-dot" style="background:#2C2416"></div></div>
+            <div class="igrid-label">Office Chic</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="height:16px"></div>
+  </div>
+
+  <!-- ==============================
+       SCREEN: DISCOVER
+  ============================== -->
+  <div id="s-discover" class="screen">
+    <div class="pg-head">
+      <h1>Discover</h1>
+      <p>Brands curated for your season</p>
+    </div>
+
+    <div class="chip-row">
+      <button class="chip on" onclick="chipToggle(this)">All</button>
+      <button class="chip" onclick="chipToggle(this)">Clothing</button>
+      <button class="chip" onclick="chipToggle(this)">Shoes</button>
+      <button class="chip" onclick="chipToggle(this)">Accessories</button>
+      <button class="chip" onclick="chipToggle(this)">Investment</button>
+      <button class="chip" onclick="chipToggle(this)">Budget</button>
+    </div>
+
+    <div class="brand-list">
+      <div class="bcard">
+        <div class="blogo">C</div>
+        <div class="binfo">
+          <div class="bname">COS</div>
+          <div class="bmeta"><span class="tag tag-mute">quiet luxury</span><span class="tag tag-mute">minimalist</span><span class="tag tag-accent">££</span></div>
+          <div class="bscore"><div class="bbar"><div class="bbar-fill" style="width:92%"></div></div><span class="bpct">92% match</span></div>
+        </div>
+      </div>
+      <div class="bcard">
+        <div class="blogo">A</div>
+        <div class="binfo">
+          <div class="bname">Aritzia</div>
+          <div class="bmeta"><span class="tag tag-mute">elevated basics</span><span class="tag tag-mute">warm tones</span><span class="tag tag-accent">££</span></div>
+          <div class="bscore"><div class="bbar"><div class="bbar-fill" style="width:88%"></div></div><span class="bpct">88% match</span></div>
+        </div>
+      </div>
+      <div class="bcard">
+        <div class="blogo">Å</div>
+        <div class="binfo">
+          <div class="bname">ARKET</div>
+          <div class="bmeta"><span class="tag tag-mute">Scandi natural</span><span class="tag tag-mute">earthy</span><span class="tag tag-accent">££</span></div>
+          <div class="bscore"><div class="bbar"><div class="bbar-fill" style="width:85%"></div></div><span class="bpct">85% match</span></div>
+        </div>
+      </div>
+      <div class="bcard">
+        <div class="blogo">M</div>
+        <div class="binfo">
+          <div class="bname">Madewell</div>
+          <div class="bmeta"><span class="tag tag-mute">relaxed</span><span class="tag tag-mute">earthy</span><span class="tag tag-accent">£</span></div>
+          <div class="bscore"><div class="bbar"><div class="bbar-fill" style="width:84%"></div></div><span class="bpct">84% match</span></div>
+        </div>
+      </div>
+      <div class="bcard">
+        <div class="blogo">R</div>
+        <div class="binfo">
+          <div class="bname">Reformation</div>
+          <div class="bmeta"><span class="tag tag-mute">feminine</span><span class="tag tag-mute">earthy</span><span class="tag tag-accent">£££</span></div>
+          <div class="bscore"><div class="bbar"><div class="bbar-fill" style="width:79%"></div></div><span class="bpct">79% match</span></div>
+        </div>
+      </div>
+      <div class="bcard">
+        <div class="blogo">E</div>
+        <div class="binfo">
+          <div class="bname">Everlane</div>
+          <div class="bmeta"><span class="tag tag-mute">essentials</span><span class="tag tag-mute">neutral</span><span class="tag tag-accent">£</span></div>
+          <div class="bscore"><div class="bbar"><div class="bbar-fill" style="width:76%"></div></div><span class="bpct">76% match</span></div>
+        </div>
+      </div>
+    </div>
+    <div style="height:24px"></div>
+  </div>
+
+  <!-- ==============================
+       SCREEN: CAPSULE
+  ============================== -->
+  <div id="s-capsule" class="screen">
+    <div class="pg-head">
+      <h1>Capsule</h1>
+      <p>Evergreen pieces for your season</p>
+    </div>
+
+    <div class="cat-tabs">
+      <button class="ctab on" onclick="catToggle(this)">All</button>
+      <button class="ctab" onclick="catToggle(this)">Tops</button>
+      <button class="ctab" onclick="catToggle(this)">Bottoms</button>
+      <button class="ctab" onclick="catToggle(this)">Outerwear</button>
+      <button class="ctab" onclick="catToggle(this)">Dresses</button>
+      <button class="ctab" onclick="catToggle(this)">Shoes</button>
+    </div>
+
+    <div class="cap-grid">
+      <div class="ccard">
+        <div class="ccard-img" style="background:#8B4A2A14"><div class="dot" style="background:#8B4A2A"></div><span class="tier">Investment</span></div>
+        <div class="ccard-info"><div class="ccard-brand">COS</div><div class="ccard-name">Oversized Wool Coat</div><div class="ccard-why">Rich rust = your power neutral</div></div>
+      </div>
+      <div class="ccard">
+        <div class="ccard-img" style="background:#3D5A3E14"><div class="dot" style="background:#3D5A3E"></div><span class="tier">Investment</span></div>
+        <div class="ccard-info"><div class="ccard-brand">ARKET</div><div class="ccard-name">Forest Green Trousers</div><div class="ccard-why">Autumn green grounds any look</div></div>
+      </div>
+      <div class="ccard">
+        <div class="ccard-img" style="background:#C4956A14"><div class="dot" style="background:#C4956A"></div><span class="tier">Accessible</span></div>
+        <div class="ccard-info"><div class="ccard-brand">Madewell</div><div class="ccard-name">Camel Ribbed Knit</div><div class="ccard-why">Warm tan — your go-to neutral</div></div>
+      </div>
+      <div class="ccard">
+        <div class="ccard-img" style="background:#2C241614"><div class="dot" style="background:#2C2416"></div><span class="tier">Investment</span></div>
+        <div class="ccard-info"><div class="ccard-brand">Reformation</div><div class="ccard-name">Dark Chocolate Midi</div><div class="ccard-why">Deep brown is your true black</div></div>
+      </div>
+      <div class="ccard">
+        <div class="ccard-img" style="background:#9B735514"><div class="dot" style="background:#9B7355"></div><span class="tier">Budget</span></div>
+        <div class="ccard-info"><div class="ccard-brand">Everlane</div><div class="ccard-name">Camel Wide-Leg Pants</div><div class="ccard-why">Versatile autumn warm</div></div>
+      </div>
+      <div class="ccard">
+        <div class="ccard-img" style="background:#B86B3C14"><div class="dot" style="background:#B86B3C"></div><span class="tier">Accessible</span></div>
+        <div class="ccard-info"><div class="ccard-brand">Aritzia</div><div class="ccard-name">Terracotta Wrap Dress</div><div class="ccard-why">Terracotta is your statement</div></div>
+      </div>
+    </div>
+    <div style="height:24px"></div>
+  </div>
+
+  <!-- ==============================
+       SCREEN: WARDROBE
+  ============================== -->
+  <div id="s-wardrobe" class="screen">
+    <div class="ward-toprow">
+      <div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)">My Wardrobe</div>
+        <h1>24 items</h1>
+      </div>
+      <button class="add-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button>
+    </div>
+
+    <div class="chip-row">
+      <button class="chip on" onclick="chipToggle(this)">All</button>
+      <button class="chip" onclick="chipToggle(this)">Tops</button>
+      <button class="chip" onclick="chipToggle(this)">Bottoms</button>
+      <button class="chip" onclick="chipToggle(this)">Dresses</button>
+      <button class="chip" onclick="chipToggle(this)">Outerwear</button>
+    </div>
+
+    <div class="ward-grid">
+      <div class="witem" style="background:#8B4A2A14"><div class="ws" style="background:#8B4A2A"></div></div>
+      <div class="witem" style="background:#3D5A3E14"><div class="ws" style="background:#3D5A3E"></div></div>
+      <div class="witem" style="background:#C4956A14"><div class="ws" style="background:#C4956A"></div></div>
+      <div class="witem" style="background:#B0B0B014"><div class="ws" style="background:#B0B0B0"></div><div class="wflag">Too light</div></div>
+      <div class="witem" style="background:#2C241614"><div class="ws" style="background:#2C2416"></div></div>
+      <div class="witem" style="background:#9B735514"><div class="ws" style="background:#9B7355"></div></div>
+      <div class="witem" style="background:#E0E0E014"><div class="ws" style="background:#E0E0E0"></div><div class="wflag">Too light</div></div>
+      <div class="witem" style="background:#B86B3C14"><div class="ws" style="background:#B86B3C"></div></div>
+      <div class="witem" style="background:#4A372814"><div class="ws" style="background:#4A3728"></div></div>
+      <div class="witem-add"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14"/></svg></div>
+    </div>
+
+    <div class="ward-stat">
+      <div class="ward-stat-row"><span>9 items · 2 flagged</span></div>
+    </div>
+    <div style="height:24px"></div>
+  </div>
+
+  <!-- ==============================
+       SCREEN: MY SEASON
+  ============================== -->
+  <div id="s-season" class="screen">
+    <div class="pg-head">
+      <h1>My Season</h1>
+    </div>
+
+    <!-- Hero -->
+    <div class="season-hero-card">
+      <div class="eyebrow">Autumn Family · Dark Sub-type</div>
+      <h2 id="season-name-display">Dark Autumn</h2>
+      <div class="archetype">"The Grounded Earth Goddess"</div>
+      <div class="pal-row">
+        <div class="ps" style="background:#3C1A08"></div>
+        <div class="ps" style="background:#8C3A1C"></div>
+        <div class="ps" style="background:#2A4A2A"></div>
+        <div class="ps" style="background:#B8820A"></div>
+        <div class="ps" style="background:#4A1E3C"></div>
+      </div>
+    </div>
+
+    <!-- Color Characteristics -->
+    <div class="season-sec">
+      <div class="attr-row">
+        <div class="attr-chip"><div class="av">Warm</div><div class="ak">Undertone</div></div>
+        <div class="attr-chip"><div class="av">Dark</div><div class="ak">Value</div></div>
+        <div class="attr-chip"><div class="av">Rich</div><div class="ak">Chroma</div></div>
+      </div>
+    </div>
+
+    <!-- About -->
+    <div class="season-sec">
+      <div class="about-text">Dark Autumn sits at the intersection of True Autumn and Dark Winter — the deepest and most dramatic of the Autumn family. Your colouring carries a naturally rich, warm glow: think deep forest greens, terracotta, dark chocolate, and burnished gold. Colors work best when they echo that depth and warmth rather than fighting it.</div>
+    </div>
+
+    <!-- Physical Traits -->
+    <div class="season-sec">
+      <h3>Your Features</h3>
+      <div class="trait-list">
+        <div class="trait-item">
+          <div class="ti-label">Eyes</div>
+          <div class="ti-text">Dark hazel, warm dark brown, dark green, or warm black. Look for swirling patterns and iris freckles. High contrast between iris and whites.</div>
+        </div>
+        <div class="trait-item">
+          <div class="ti-label">Hair</div>
+          <div class="ti-text">Medium to dark golden brown, dark auburn, dark chocolate, or black-brown. Develops warm golden or red highlights in the sun.</div>
+        </div>
+        <div class="trait-item">
+          <div class="ti-label">Skin</div>
+          <div class="ti-text">Neutral to neutral-warm undertones. Range from light to deep. Golden or bronze undertones visible. May have freckles; tans easily and warmly.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Full Palette -->
+    <div class="season-sec">
+      <h3>Your Full Palette</h3>
+
+      <div class="pal-group">
+        <div class="pal-group-lbl">Neutrals</div>
+        <div class="named-swatches">
+          <div class="nswatch"><div class="ns-color" style="background:#1C1810"></div><div class="ns-name">Warm Black</div></div>
+          <div class="nswatch"><div class="ns-color" style="background:#2A1408"></div><div class="ns-name">Espresso</div></div>
+          <div class="nswatch"><div class="ns-color" style="background:#3C1A08"></div><div class="ns-name">Dark Chocolate</div></div>
+          <div class="nswatch"><div class="ns-color" style="background:#4A4A28"></div><div class="ns-name">Dark Olive</div></div>
+          <div class="nswatch"><div class="ns-color" style="background:#9B7355"></div><div class="ns-name">Camel</div></div>
+          <div class="nswatch"><div class="ns-color" style="background:#D4B898"></div><div class="ns-name">Warm Beige</div></div>
+          <div class="nswatch"><div class="ns-color" style="background:#EDD9BC"></div><div class="ns-name">Warm Cream</div></div>
+        </div>
+        <p style="font-size:11px;color:var(--text-3);margin-top:9px">Dark chocolate replaces black. Warm cream replaces white. Avoid cool grey.</p>
+      </div>
+
+      <div class="pal-group">
+        <div class="pal-group-lbl">Reds &amp; Oranges</div>
+        <div class="named-swatches">
+          <div class="nswatch"><div class="ns-color" style="background:#A32818"></div><div class="ns-name">Tomato Red</div></div>
+          <div class="nswatch"><div class="ns-color" style="background:#8C3A1C"></div><div class="ns-name">Rust</div></div>
+          <div class="nswatch"><div class="ns-color" style="background:#6B1E22"></div><div class="ns-name">Maroon</div></div>
+          <div class="nswatch"><div class="ns-color" style="background:#B8693A"></div><div class="ns-name">Terracotta</div></div>
+          <div class="nswatch"><div class="ns-color" style="background:#D4826A"></div><div class="ns-name">Deep Peach</div></div>
+        </div>
+      </div>
+
+      <div class="pal-group">
+        <div class="pal-group-lbl">Greens</div>
+        <div class="named-swatches">
+          <div class="nswatch"><div class="ns-color" style="background:#2A4A2A"></div><div class="ns-name">Forest Green</div></div>
+          <div class="nswatch"><div class="ns-color" style="background:#3D5A3A"></div><div class="ns-name">Basil</div></div>
+          <div class="nswatch"><div class="ns-color" style="background:#5C6030"></div><div class="ns-name">Olive</div></div>
+          <div class="nswatch"><div class="ns-color" style="background:#2A5858"></div><div class="ns-name">Dark Teal</div></div>
+        </div>
+      </div>
+
+      <div class="pal-group">
+        <div class="pal-group-lbl">Yellows &amp; Golds</div>
+        <div class="named-swatches">
+          <div class="nswatch"><div class="ns-color" style="background:#B8820A"></div><div class="ns-name">Mustard</div></div>
+          <div class="nswatch"><div class="ns-color" style="background:#9A6B18"></div><div class="ns-name">Deep Gold</div></div>
+          <div class="nswatch"><div class="ns-color" style="background:#C48C10"></div><div class="ns-name">Curry Yellow</div></div>
+        </div>
+      </div>
+
+      <div class="pal-group">
+        <div class="pal-group-lbl">Purples</div>
+        <div class="named-swatches">
+          <div class="nswatch"><div class="ns-color" style="background:#4A1E3C"></div><div class="ns-name">Aubergine</div></div>
+          <div class="nswatch"><div class="ns-color" style="background:#6A2840"></div><div class="ns-name">Plum</div></div>
+          <div class="nswatch"><div class="ns-color" style="background:#3A1430"></div><div class="ns-name">Deep Plum</div></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Metals + Stones -->
+    <div class="season-sec">
+      <h3>Metals &amp; Stones</h3>
+      <div class="metals-row" style="margin-bottom:12px">
+        <div class="metal"><div class="mdot" style="background:linear-gradient(135deg,#B8860B,#FFD700,#B8860B)"></div><span>Gold</span></div>
+        <div class="metal"><div class="mdot" style="background:linear-gradient(135deg,#8B6A2A,#C8A040,#8B6A2A)"></div><span>Bronze</span></div>
+        <div class="metal"><div class="mdot" style="background:linear-gradient(135deg,#A0785A,#D4A070,#A0785A)"></div><span>Copper</span></div>
+      </div>
+      <div style="font-size:11px;color:var(--text-3);margin-bottom:8px">Choose antiqued, hammered, or oxidised finishes over polished. Avoid cool silver.</div>
+      <div class="stones-row">
+        <div class="stone-chip"><div class="stone-dot" style="background:#B94040"></div><span>Carnelian</span></div>
+        <div class="stone-chip"><div class="stone-dot" style="background:#8B1A1A"></div><span>Garnet</span></div>
+        <div class="stone-chip"><div class="stone-dot" style="background:#8B6A2A"></div><span>Jasper</span></div>
+        <div class="stone-chip"><div class="stone-dot" style="background:#1A6B3C"></div><span>Emerald</span></div>
+        <div class="stone-chip"><div class="stone-dot" style="background:#2A6868"></div><span>Malachite</span></div>
+      </div>
+    </div>
+
+    <!-- Pattern Guide -->
+    <div class="season-sec">
+      <h3>Pattern Guide</h3>
+      <div class="pat-row">
+        <div class="pat-item">
+          <div class="pat-icon yes">✓</div>
+          <div class="pat-txt">
+            <div class="pt-title">Bold, stylised botanical</div>
+            <div class="pt-desc">Large autumn leaves, paisley, oval shapes, wood grain — organic and loosely arranged.</div>
+          </div>
+        </div>
+        <div class="pat-item">
+          <div class="pat-icon yes">✓</div>
+          <div class="pat-txt">
+            <div class="pt-title">High-contrast arrangements</div>
+            <div class="pt-desc">Dark background with warm-toned motifs. Reflects your natural feature contrast.</div>
+          </div>
+        </div>
+        <div class="pat-item">
+          <div class="pat-icon yes">✓</div>
+          <div class="pat-txt">
+            <div class="pt-title">Oriental &amp; paisley prints</div>
+            <div class="pt-desc">Rich, jewel-toned patterns with warmth. Intricate but earthy in feeling.</div>
+          </div>
+        </div>
+        <div class="pat-item">
+          <div class="pat-icon no">✕</div>
+          <div class="pat-txt">
+            <div class="pt-title">Geometric / stiff prints</div>
+            <div class="pt-desc">Too structured — fights your organic warmth. Avoid rigid lines and cool-toned plaids.</div>
+          </div>
+        </div>
+        <div class="pat-item">
+          <div class="pat-icon no">✕</div>
+          <div class="pat-txt">
+            <div class="pt-title">Small, dense patterns</div>
+            <div class="pt-desc">Get lost at your natural contrast level. Patterns need scale to register.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Outfit Formula -->
+    <div class="season-sec">
+      <h3>Outfit Formula</h3>
+      <div class="formula-card">
+        <h4>Value Contrast is Your Friend</h4>
+        <p>Pair deep darks with warm mediums — like dark chocolate with camel, or forest green with mustard. You can also use hue contrast: yellows with blues-greens, or terracotta with teal. Avoid going head-to-toe in one mid-tone; your high-contrast features need an outfit that can hold their own.</p>
+        <div class="combo-row">
+          <div class="csw" style="background:#3C1A08"></div>
+          <div class="csw" style="background:#9B7355"></div>
+          <div class="csw" style="background:#B8820A"></div>
+        </div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:6px">Dark chocolate · Camel · Mustard</div>
+      </div>
+      <div class="formula-card" style="margin-top:10px">
+        <h4>Earth + Accent</h4>
+        <p>Ground the look in a neutral (chocolate, camel, ivory), then add one Autumn accent — rust, forest green, or teal. Three-colour maximum for the most polished result.</p>
+        <div class="combo-row">
+          <div class="csw" style="background:#6A2840"></div>
+          <div class="csw" style="background:#EDD9BC"></div>
+          <div class="csw" style="background:#9A6B18"></div>
+        </div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:6px">Plum · Warm cream · Deep gold</div>
+      </div>
+    </div>
+
+    <!-- vs Dark Winter -->
+    <div class="season-sec">
+      <h3>Dark Autumn vs. Dark Winter</h3>
+      <div class="compare-block">
+        <div class="cb-title">You're Dark Autumn if…</div>
+        <div class="cb-desc">Gold flatters more than silver. You look best in earthy, warm tones. Cool or icy colors feel stark rather than crisp on you. Your palette has an organic, burnished quality.</div>
+        <div class="compare-pals">
+          <div class="cp" style="background:#8B4A2A"></div>
+          <div class="cp" style="background:#3D5A3E"></div>
+          <div class="cp" style="background:#C4956A"></div>
+          <div class="cp" style="background:#2C2416"></div>
+          <div class="cp" style="background:#B86B3C"></div>
+        </div>
+      </div>
+      <div class="compare-block" style="margin-top:8px">
+        <div class="cb-title">Dark Winter looks like…</div>
+        <div class="cb-desc">Cool, blue-black pigments with icy clarity. Silver is the better metal. Pure black and pure white work. The palette is sharp and cool rather than rich and warm.</div>
+        <div class="compare-pals">
+          <div class="cp" style="background:#1A1A2E"></div>
+          <div class="cp" style="background:#4A2060"></div>
+          <div class="cp" style="background:#2A3870"></div>
+          <div class="cp" style="background:#C0C0D0"></div>
+          <div class="cp" style="background:#6A2040"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- What to Avoid -->
+    <div class="season-sec">
+      <h3>What to Avoid</h3>
+      <div class="avoid-list">
+        <div class="avoid-item"><div class="avoid-swatch" style="background:#E8E8F4"></div><div><p>Icy pastels</p><span>Too light and cool — creates a washed-out effect</span></div></div>
+        <div class="avoid-item"><div class="avoid-swatch" style="background:#F8F8F8"></div><div><p>Stark white</p><span>Swap for ivory, warm cream, or soft ecru</span></div></div>
+        <div class="avoid-item"><div class="avoid-swatch" style="background:#CC88CC"></div><div><p>Bright pink / fuchsia</p><span>Cool-toned — clashes with your warm undertone</span></div></div>
+        <div class="avoid-item"><div class="avoid-swatch" style="background:#B0B8C8"></div><div><p>Dusty blue / periwinkle</p><span>Too cool and muted — loses your warmth entirely</span></div></div>
+        <div class="avoid-item"><div class="avoid-swatch" style="background:#C0C0C0"></div><div><p>Cool grey / silver</p><span>Replace with warm taupe, camel, or mushroom</span></div></div>
+      </div>
+    </div>
+
+    <div style="padding: 24px 24px 0">
+      <button class="btn-sm btn-outline" style="width:100%; padding:13px; font-size:14px;" onclick="go('onboarding')">Change My Season</button>
+    </div>
+    <div style="height:32px"></div>
+  </div>
+
+  <!-- ==============================
+       BOTTOM NAV
+  ============================== -->
+  <nav class="nav" id="main-nav" style="display:none">
+    <button class="nav-btn on" id="nav-home" onclick="go('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="nav-btn" id="nav-discover" onclick="go('discover')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <span>Discover</span>
+    </button>
+    <button class="nav-btn" id="nav-capsule" onclick="go('capsule')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Capsule</span>
+    </button>
+    <button class="nav-btn" id="nav-wardrobe" onclick="go('wardrobe')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>
+      <span>Wardrobe</span>
+    </button>
+    <button class="nav-btn" id="nav-season" onclick="go('season')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <span>My Season</span>
+    </button>
+  </nav>
+
+</div>
+
+<script>
+let currentSeason = 'dark-autumn';
+let currentSeasonName = 'Dark Autumn';
+
+function pickSeason(el, key, family, name) {
+  document.querySelectorAll('.sopt').forEach(o => o.classList.remove('on'));
+  el.classList.add('on');
+  currentSeason = key;
+  currentSeasonName = name;
+  document.getElementById('app').setAttribute('data-season', key);
+}
+
+function enterApp() {
+  document.getElementById('app').setAttribute('data-season', currentSeason);
+  document.getElementById('home-season-lbl').textContent = currentSeasonName;
+  document.getElementById('season-name-display').textContent = currentSeasonName;
+  document.getElementById('main-nav').style.display = 'flex';
+  go('home');
+}
+
+function go(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('on'));
+  document.getElementById('s-' + name).classList.add('active');
+  const nb = document.getElementById('nav-' + name);
+  if (nb) nb.classList.add('on');
+  if (name === 'onboarding') {
+    document.getElementById('main-nav').style.display = 'none';
+  }
+}
+
+function chipToggle(el) {
+  el.closest('.chip-row').querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+}
+
+function catToggle(el) {
+  el.closest('.cat-tabs').querySelectorAll('.ctab').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+}
+
+document.querySelectorAll('.heart').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    btn.classList.toggle('saved');
+  });
+});
+</script>
+</body>
+</html>

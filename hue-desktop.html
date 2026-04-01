@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hue Harmony — The Hue Edit</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ========================
+   DESIGN TOKENS
+======================== */
+:root {
+  --bg: #F7F5F2;
+  --surface: #FFFFFF;
+  --border: #E8E8E4;
+  --border-strong: #D4D4CE;
+  --text-1: #1A1A18;
+  --text-2: #5C5C58;
+  --text-3: #ADADAA;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Inter', -apple-system, sans-serif;
+  --sidebar-w: 220px;
+
+  /* Season accent — Dark Autumn default */
+  --s-bg: #F5EEE6;
+  --s-accent: #8B4A2A;
+  --s-accent-dark: #6A3418;
+  --s-light: #F0DDD0;
+}
+[data-season="light-spring"]  { --s-bg:#FDF2EE; --s-accent:#C47A5E; --s-accent-dark:#A65A40; --s-light:#FADDCE; }
+[data-season="true-spring"]   { --s-bg:#FEF6EC; --s-accent:#D4724A; --s-accent-dark:#B05830; --s-light:#FAEADA; }
+[data-season="bright-spring"] { --s-bg:#FFF5F0; --s-accent:#D94F3D; --s-accent-dark:#B53A28; --s-light:#FFE0DC; }
+[data-season="light-summer"]  { --s-bg:#F0F7FF; --s-accent:#7AAFE6; --s-accent-dark:#5A8FC6; --s-light:#E0F2FF; }
+[data-season="true-summer"]   { --s-bg:#F4F1FA; --s-accent:#8B7EC0; --s-accent-dark:#6B5EA0; --s-light:#E8E2F5; }
+[data-season="soft-summer"]   { --s-bg:#F0EEF4; --s-accent:#7B8BA6; --s-accent-dark:#5A6A84; --s-light:#E0E8F0; }
+[data-season="soft-autumn"]   { --s-bg:#F5F0E8; --s-accent:#9A7A50; --s-accent-dark:#7A5E38; --s-light:#EDE0CC; }
+[data-season="true-autumn"]   { --s-bg:#FBF3E4; --s-accent:#B5600A; --s-accent-dark:#8C4A08; --s-light:#F5DFB8; }
+[data-season="dark-winter"]   { --s-bg:#EEEEF4; --s-accent:#3A2860; --s-accent-dark:#261A44; --s-light:#E0D8F0; }
+[data-season="true-winter"]   { --s-bg:#EEF5F3; --s-accent:#0F52BA; --s-accent-dark:#0A3E8C; --s-light:#D6E8FF; }
+[data-season="bright-winter"] { --s-bg:#F0F8FF; --s-accent:#CC0066; --s-accent-dark:#990044; --s-light:#FFD6EA; }
+
+/* ========================
+   RESET + BASE
+======================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text-1);
+  min-height: 100vh;
+  display: flex;
+}
+
+/* ========================
+   LAYOUT
+======================== */
+.sidebar {
+  width: var(--sidebar-w);
+  min-height: 100vh;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 10;
+}
+
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+.screen {
+  display: none;
+  min-height: 100vh;
+}
+.screen.active { display: block; }
+
+/* ========================
+   SIDEBAR
+======================== */
+.sidebar-logo {
+  padding: 28px 24px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--text-1);
+}
+
+.sidebar-season {
+  margin: 20px 16px 0;
+  padding: 12px;
+  background: var(--s-bg);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.sidebar-season:hover { opacity: 0.8; }
+.ss-label { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--s-accent); }
+.ss-name { font-size: 14px; font-weight: 500; color: var(--text-1); margin-top: 3px; }
+.ss-edit { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+.ss-pals { display: flex; gap: 3px; margin-top: 8px; }
+.ss-pals span { flex: 1; height: 6px; border-radius: 3px; }
+
+.sidebar-nav {
+  padding: 16px 8px;
+  flex: 1;
+}
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-2);
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-body);
+  transition: all 0.15s;
+  margin-bottom: 2px;
+}
+.nav-link svg { width: 18px; height: 18px; stroke-width: 1.6; flex-shrink: 0; }
+.nav-link:hover { background: var(--bg); color: var(--text-1); }
+.nav-link.on { background: var(--s-light); color: var(--s-accent); font-weight: 600; }
+
+.sidebar-foot {
+  padding: 20px 16px;
+  border-top: 1px solid var(--border);
+}
+.sidebar-foot p { font-size: 11px; color: var(--text-3); line-height: 1.6; }
+/* ========================
+   WORDMARK SUB-LABEL
+======================== */
+.wordmark-sub {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+/* ========================
+   PRODUCT CARD IMAGE
+======================== */
+.pcard-img img {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+
+/* ========================
+   INSPO GRID WITH IMAGES
+======================== */
+.inspo-bg {
+  background-size: cover !important;
+  background-position: center !important;
+  position: relative;
+}
+.inspo-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(10,5,0,0.90) 0%, rgba(10,5,0,0.55) 35%, transparent 65%);
+  border-radius: 14px;
+}
+.inspo-lbl {
+  position: relative;
+  color: #fff;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.7);
+}
+
+/* ========================
+   GAP ANALYSIS PANEL (redesign)
+======================== */
+.gap-score-block {
+  background: var(--s-bg);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.gap-score-num {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 400;
+  color: var(--text-1);
+  line-height: 1;
+}
+.gap-score-lbl {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.gap-cat-row { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+.gap-cat-label { font-size: 12px; color: var(--text-2); width: 72px; flex-shrink: 0; }
+.gap-cat-bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.gap-cat-fill { height: 100%; border-radius: 2px; background: var(--s-accent); }
+.gap-cat-fill.healthy { background: #22C55E; }
+.gap-cat-count { font-size: 10px; color: var(--text-3); white-space: nowrap; }
+.gap-divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+.gap-insight {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--text-1);
+  line-height: 1.75;
+  margin-bottom: 4px;
+}
+.gap-shop { display: flex; flex-direction: column; gap: 7px; }
+.gap-shop-item {
+  display: flex; gap: 10px; align-items: center;
+  background: var(--bg); border-radius: 10px;
+  padding: 8px 10px; cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+.gap-shop-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+.gap-shop-img {
+  width: 44px; height: 44px;
+  border-radius: 9px; object-fit: cover; flex-shrink: 0;
+}
+.gap-shop-info .gs-brand { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text-3); }
+.gap-shop-info .gs-name { font-size: 12px; color: var(--text-1); margin-top: 1px; line-height: 1.3; }
+.gap-shop-info .gs-price { font-size: 11px; color: var(--text-2); margin-top: 1px; }
+
+/* ========================
+   SETTINGS
+======================== */
+.settings-layout { max-width: 560px; }
+.settings-section { margin-bottom: 32px; }
+.settings-section h3 { font-family: var(--font-display); font-size: 20px; font-weight: 400; color: var(--text-1); margin-bottom: 14px; }
+.setting-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--surface); border-radius: 12px; margin-bottom: 6px; }
+.setting-info .si-label { font-size: 14px; font-weight: 500; color: var(--text-1); }
+.setting-info .si-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+.setting-value { font-size: 13px; color: var(--text-2); }
+.s-toggle { width: 42px; height: 22px; border-radius: 11px; background: var(--border-strong); border: none; cursor: pointer; position: relative; transition: background 0.2s; flex-shrink: 0; }
+.s-toggle.on { background: var(--s-accent); }
+.s-toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: white; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+.s-toggle.on::after { transform: translateX(20px); }
+.danger-row { padding: 14px 16px; background: #FFF5F5; border-radius: 12px; cursor: pointer; margin-bottom: 6px; }
+.danger-row p { font-size: 14px; font-weight: 500; color: #DC2626; }
+
+/* ========================
+   SHARED
+======================== */
+.page-wrap {
+  max-width: 1100px;
+  padding: 40px 48px 60px;
+}
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 400;
+  color: var(--text-1);
+  line-height: 1.1;
+}
+.page-sub {
+  font-size: 14px;
+  color: var(--text-2);
+  margin-top: 5px;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--text-1);
+}
+
+.eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--s-accent);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.tag-mute { background: var(--border); color: var(--text-2); }
+.tag-accent { background: var(--s-light); color: var(--s-accent); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  font-family: var(--font-body);
+  transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.82; }
+.btn-dark { background: var(--text-1); color: #fff; }
+.btn-outline { background: transparent; border: 1.5px solid var(--border-strong); color: var(--text-1); }
+.btn-accent { background: var(--s-accent); color: #fff; }
+
+.chip-row {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.chip {
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1.5px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-2);
+  font-family: var(--font-body);
+  transition: all 0.15s;
+}
+.chip.on { background: var(--s-accent); border-color: var(--s-accent); color: #fff; }
+
+/* Product card */
+.pcard {
+  background: var(--surface);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform 0.15s, box-shadow 0.15s;
+  cursor: pointer;
+}
+.pcard:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+.pcard-img {
+  width: 100%;
+  aspect-ratio: 3/4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+/* TO ADD REAL IMAGES: replace the .pcard-img div with:
+   <img src="YOUR_IMAGE_URL" alt="product name" style="width:100%;height:100%;object-fit:cover">
+   Recommended: Unsplash API — https://api.unsplash.com/search/photos?query=terracotta+coat&client_id=YOUR_KEY */
+.pcard-img .garment {
+  width: 60px; height: 80px;
+  border-radius: 6px 6px 20px 20px;
+  opacity: 0.7;
+}
+.heart {
+  position: absolute;
+  top: 10px; right: 10px;
+  width: 32px; height: 32px;
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(4px);
+  border: none;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.heart svg { width: 14px; height: 14px; color: var(--text-3); }
+.heart.saved svg { color: var(--s-accent); fill: var(--s-accent); }
+.pcard-info { padding: 12px 14px 14px; }
+.pcard-brand { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); }
+.pcard-name { font-size: 14px; color: var(--text-1); margin-top: 3px; line-height: 1.3; }
+.pcard-price { font-size: 13px; color: var(--text-2); margin-top: 5px; }
+.pcard-why { font-size: 11px; color: var(--s-accent); font-style: italic; margin-top: 3px; }
+
+/* ========================
+   ONBOARDING
+======================== */
+#s-onboarding {
+  min-height: 100vh;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 40px;
+}
+#s-onboarding.active { display: flex; }
+.ob-inner { max-width: 760px; width: 100%; }
+.ob-inner .wordmark { font-size: 42px; margin-bottom: 8px; }
+.ob-inner > p { font-size: 16px; color: var(--text-2); margin-bottom: 36px; line-height: 1.6; }
+
+.season-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 32px;
+}
+.sopt {
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  position: relative;
+}
+.sopt:hover { border-color: var(--s-accent); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+.sopt.on { border-color: var(--s-accent); }
+.sopt.on::after {
+  content: '';
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 20px; height: 20px;
+  background: var(--s-accent);
+  border-radius: 50%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E");
+  background-size: 12px;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.spal { height: 48px; display: flex; }
+.spal div { flex: 1; }
+.slabel { padding: 9px 11px; background: var(--surface); }
+.slabel .sfam { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--text-3); }
+.slabel .sname { font-size: 13px; font-weight: 500; color: var(--text-1); margin-top: 1px; }
+
+.ob-cta-row { display: flex; align-items: center; gap: 16px; }
+.ob-cta-row button.primary {
+  padding: 14px 36px;
+  border-radius: 100px;
+  background: var(--text-1);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.ob-cta-row button.primary:hover { opacity: 0.8; }
+.ob-cta-row p { font-size: 13px; color: var(--text-3); }
+
+/* ========================
+   HOME
+======================== */
+.home-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 36px;
+}
+.home-topbar h1 {
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+.home-topbar .sub { margin-bottom: 8px; }
+
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.home-lower {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+/* Featured brand */
+.feat-block {
+  background: var(--s-bg);
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.feat-content { padding: 28px 28px 0; flex: 1; }
+.feat-content h3 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--text-1);
+  margin-top: 6px;
+}
+.feat-content p { font-size: 14px; color: var(--text-2); margin-top: 8px; line-height: 1.6; }
+.feat-hero-img { width: 100%; height: 160px; overflow: hidden; }
+.feat-hero-img img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
+.feat-mini-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+  margin-top: 20px;
+}
+.feat-mini-cell {
+  aspect-ratio: 1;
+  background: rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.feat-mini-cell span { width: 36px; height: 36px; border-radius: 50%; display: block; }
+.feat-foot { padding: 14px 28px 20px; display: flex; justify-content: space-between; align-items: center; }
+.feat-foot p { font-size: 13px; color: var(--text-2); }
+
+/* Capsule sidebar */
+.capsule-sidebar { display: flex; flex-direction: column; gap: 12px; }
+.cap-mini-card {
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+.cap-mini-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.07); }
+.cap-mini-swatch {
+  width: 52px; height: 52px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cap-mini-swatch span { width: 28px; height: 28px; border-radius: 50%; display: block; border: 2px solid rgba(255,255,255,0.5); }
+.cap-mini-img { width: 52px; height: 52px; border-radius: 10px; overflow: hidden; flex-shrink: 0; }
+.cap-mini-img img { width: 100%; height: 100%; object-fit: cover; }
+.cap-mini-info .cm-brand { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text-3); }
+.cap-mini-info .cm-name { font-size: 13px; color: var(--text-1); margin-top: 2px; }
+.cap-mini-info .cm-price { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+
+/* Inspo grid */
+.inspo-section { margin-bottom: 40px; }
+.inspo-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.inspo-maso {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.inspo-item {
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.inspo-item:hover { transform: scale(1.01); }
+.inspo-item.tall { grid-row: span 2; }
+.inspo-bg {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 12px;
+}
+.inspo-item.tall .inspo-bg { aspect-ratio: unset; height: 100%; min-height: 240px; }
+.inspo-dots { display: flex; gap: 5px; }
+.inspo-dot { width: 20px; height: 20px; border-radius: 50%; }
+.inspo-lbl { font-size: 12px; color: #fff; font-weight: 600; letter-spacing: 0.02em; }
+
+/* ========================
+   DISCOVER
+======================== */
+.discover-filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+.brand-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.bcard {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+.bcard:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+.blogo {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  background: var(--s-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--s-accent);
+  flex-shrink: 0;
+}
+.binfo { flex: 1; min-width: 0; }
+.bname { font-size: 16px; font-weight: 500; color: var(--text-1); }
+.bmeta { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+.bscore { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.bbar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.bbar-fill { height: 100%; background: var(--s-accent); border-radius: 2px; }
+.bpct { font-size: 12px; color: var(--text-2); white-space: nowrap; font-weight: 500; }
+
+/* ========================
+   CAPSULE
+======================== */
+.cat-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.ctab {
+  padding: 7px 18px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1.5px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-2);
+  font-family: var(--font-body);
+  transition: all 0.15s;
+}
+.ctab.on { background: var(--text-1); border-color: var(--text-1); color: #fff; }
+.capsule-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.tier {
+  position: absolute;
+  bottom: 8px; left: 8px;
+  padding: 3px 8px;
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  backdrop-filter: blur(4px);
+}
+
+/* ========================
+   WARDROBE
+======================== */
+.ward-toprow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.ward-toprow .left h1 { font-family: var(--font-display); font-size: 36px; font-weight: 400; }
+.ward-toprow .left p { font-size: 14px; color: var(--text-2); margin-top: 4px; }
+.add-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--s-accent);
+  border: none;
+  border-radius: 100px;
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.add-btn svg { width: 16px; height: 16px; stroke-width: 2.5; }
+.ward-layout { display: grid; grid-template-columns: 1fr 280px; gap: 32px; align-items: start; }
+.ward-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+.witem {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--s-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.witem:hover { transform: scale(1.02); }
+.witem .ws { width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.5); }
+.wbadge {
+  position: absolute;
+  bottom: 5px; right: 5px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.wbadge svg { width: 10px; height: 10px; stroke: #fff; stroke-width: 3; }
+.wbadge.good { background: #22C55E; }
+.wbadge.warn { background: #EF4444; }
+.witem-add {
+  background: transparent;
+  border: 2px dashed #CFCFCA;
+  border-radius: 12px;
+  cursor: pointer;
+  aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.15s;
+}
+.witem-add:hover { border-color: var(--s-accent); }
+.witem-add svg { width: 24px; height: 24px; stroke: #CFCFCA; stroke-width: 2; }
+
+.ward-panel {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 20px;
+  position: sticky;
+  top: 40px;
+}
+.ward-panel h3 { font-family: var(--font-display); font-size: 18px; font-weight: 400; margin-bottom: 16px; }
+.wstat-row { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+.wstat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.wstat-row span { font-size: 13px; color: var(--text-2); }
+.ward-panel hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+.ward-panel p { font-size: 12px; color: var(--text-3); line-height: 1.6; }
+.ward-hint { font-family: var(--font-display); font-style: italic; font-size: 14px; color: var(--text-2); margin-bottom: 20px; }
+.ward-grid-new { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.wthumb { position: relative; border-radius: 10px; overflow: hidden; aspect-ratio: 3/4; background: var(--surface); cursor: pointer; transition: transform 0.15s; }
+.wthumb:hover { transform: scale(1.02); }
+.wthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wthumb-flag {
+  position: absolute; bottom: 7px; left: 7px;
+  background: rgba(26, 26, 24, 0.72); color: #fff;
+  font-family: var(--font-body); font-size: 9px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 3px 7px; border-radius: 100px; line-height: 1;
+  backdrop-filter: blur(4px);
+}
+.wthumb-add { border-radius: 10px; aspect-ratio: 3/4; border: 1.5px dashed var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; background: transparent; transition: border-color 0.15s; }
+.wthumb-add:hover { border-color: var(--s-accent); }
+.wthumb-add svg { width: 24px; height: 24px; stroke: var(--text-3); stroke-width: 2; fill: none; }
+.ward-panel-stack { display: flex; flex-direction: column; gap: 16px; }
+.ward-card { background: white; border-radius: 16px; padding: 20px; }
+.ward-card h3 { font-family: var(--font-display); font-size: 18px; font-weight: 400; margin-bottom: 14px; }
+.brand-logos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.brand-logo-item { background: var(--bg); border-radius: 10px; padding: 14px 10px; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-1); }
+
+/* ========================
+   MY SEASON
+======================== */
+.season-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  align-items: start;
+}
+.season-col-left {}
+.season-col-right {}
+
+.season-hero-card {
+  background: var(--s-bg);
+  border-radius: 24px;
+  padding: 28px;
+  margin-bottom: 24px;
+}
+.season-hero-card h2 {
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 400;
+  color: var(--text-1);
+  margin-top: 6px;
+  line-height: 1.1;
+}
+.archetype {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--text-2);
+  margin-top: 5px;
+}
+.pal-row { display: flex; gap: 8px; margin-top: 22px; }
+.pal-row .ps { flex: 1; height: 52px; border-radius: 12px; }
+
+.attr-row { display: flex; gap: 10px; margin-bottom: 24px; }
+.attr-chip {
+  flex: 1;
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 14px 10px;
+  text-align: center;
+}
+.attr-chip .av { font-size: 16px; font-weight: 600; color: var(--text-1); }
+.attr-chip .ak { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--text-3); margin-top: 4px; }
+
+.about-text { font-size: 14px; color: var(--text-2); line-height: 1.75; background: var(--surface); padding: 18px; border-radius: 16px; margin-bottom: 24px; }
+
+.season-sec { margin-bottom: 28px; }
+.season-sec h3 { font-family: var(--font-display); font-size: 20px; font-weight: 400; color: var(--text-1); margin-bottom: 14px; }
+
+.trait-list { display: flex; flex-direction: column; gap: 9px; }
+.trait-item { background: var(--surface); border-radius: 14px; padding: 14px 16px; display: flex; gap: 12px; }
+.ti-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--s-accent); min-width: 40px; margin-top: 1px; flex-shrink: 0; }
+.ti-text { font-size: 13px; color: var(--text-2); line-height: 1.55; }
+
+/* Palette groups */
+.pal-group { margin-bottom: 20px; }
+.pal-group:last-child { margin-bottom: 0; }
+.pal-group-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--text-3); margin-bottom: 9px; }
+.named-swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
+.nswatch .ns-color { aspect-ratio: 4/3; border-radius: 10px; }
+.nswatch .ns-name { font-size: 10px; color: var(--text-2); text-align: center; margin-top: 5px; line-height: 1.3; font-weight: 500; }
+
+.metals-row { display: flex; gap: 10px; margin-bottom: 12px; }
+.metal { flex: 1; display: flex; align-items: center; gap: 9px; padding: 12px 16px; background: var(--surface); border-radius: 12px; }
+.mdot { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; }
+.metal span { font-size: 14px; font-weight: 500; color: var(--text-1); }
+
+.stones-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.stone-chip { display: flex; align-items: center; gap: 6px; padding: 7px 13px; background: var(--surface); border-radius: 100px; }
+.stone-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.stone-chip span { font-size: 12px; font-weight: 500; color: var(--text-2); }
+
+.pat-row { display: flex; flex-direction: column; gap: 8px; }
+.pat-item { display: flex; gap: 12px; align-items: center; background: var(--surface); border-radius: 14px; padding: 14px; }
+.pat-icon { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.pat-icon.yes { background: #F0FAF4; }
+.pat-icon.no { background: #FFF0F0; }
+.pat-txt { flex: 1; }
+.pat-txt .pt-title { font-size: 13px; font-weight: 500; color: var(--text-1); }
+.pat-txt .pt-desc { font-size: 12px; color: var(--text-2); margin-top: 2px; line-height: 1.4; }
+.pat-ref { width: 64px; height: 64px; border-radius: 10px; overflow: hidden; flex-shrink: 0; }
+.pat-ref img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ========================
+   DISCOVER — NEW CARD DESIGN
+======================== */
+.discover-topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.discover-search { position: relative; align-self: center; }
+.discover-search input { border: 1px solid var(--border); border-radius: 8px; padding: 9px 14px 9px 36px; font-size: 13px; background: var(--surface); color: var(--text-1); width: 200px; font-family: var(--font-body); outline: none; }
+.discover-search input::placeholder { color: var(--text-3); }
+.discover-search input:focus { border-color: var(--s-accent); }
+.ds-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-3); pointer-events: none; }
+.ds-icon svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+.brand-grid-new { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.bcard-new { background: var(--surface); border-radius: 16px; overflow: hidden; transition: box-shadow 0.15s; cursor: pointer; }
+.bcard-new:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.09); }
+.bcard-hd { display: flex; align-items: flex-start; justify-content: space-between; padding: 18px 20px 14px; }
+.bcard-id .bcard-bname { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-1); }
+.bcard-id .bmeta { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.bcard-rt { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; margin-left: 12px; }
+.bcard-pct-num { font-family: var(--font-display); font-size: 34px; font-weight: 500; color: var(--text-1); line-height: 1; }
+.bcard-pct-lbl { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--s-accent); }
+.bheart-btn { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border); background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-top: 8px; transition: border-color 0.15s; }
+.bheart-btn:hover { border-color: var(--s-accent); }
+.bheart-btn svg { width: 13px; height: 13px; stroke: var(--text-3); fill: none; stroke-width: 1.8; }
+.bcard-imgs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; }
+.bcard-img { aspect-ratio: 3/4; overflow: hidden; background: #edeae5; }
+.bcard-img img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.bcard-affinity { padding: 0 20px 14px; font-size: 12px; font-style: italic; color: var(--text-2); line-height: 1.5; }
+.bcard-caution-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9a7a4a; background: #fdf5e6; border-radius: 6px; padding: 3px 8px; margin: 0 20px 12px; }
+.bcard-caution .bcard-pct-num { color: var(--text-3); }
+.bcard-caution .bcard-pct-lbl { color: var(--text-3); }
+.bcard-caution .bcard-imgs { opacity: 0.72; }
+
+.formula-card { background: var(--s-bg); border-radius: 16px; padding: 18px; margin-bottom: 10px; }
+.formula-card h4 { font-family: var(--font-display); font-size: 17px; font-weight: 400; color: var(--text-1); }
+.formula-card p { font-size: 13px; color: var(--text-2); margin-top: 7px; line-height: 1.65; }
+.combo-row { display: flex; gap: 5px; margin-top: 14px; height: 28px; }
+.combo-row .csw { flex: 1; border-radius: 6px; }
+
+.compare-block { background: var(--surface); border-radius: 16px; padding: 16px; margin-bottom: 10px; }
+.compare-block .cb-title { font-size: 13px; font-weight: 700; color: var(--text-1); margin-bottom: 6px; }
+.compare-block .cb-desc { font-size: 13px; color: var(--text-2); line-height: 1.5; }
+.compare-pals { display: flex; gap: 4px; height: 16px; margin-top: 12px; }
+.compare-pals .cp { flex: 1; border-radius: 3px; }
+
+.avoid-list { display: flex; flex-direction: column; gap: 8px; }
+.avoid-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--surface); border-radius: 12px; }
+.avoid-swatch { width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0; }
+.avoid-item p { font-size: 13px; font-weight: 500; color: var(--text-1); }
+.avoid-item span { font-size: 12px; color: var(--text-2); }
+
+/* Makeup section */
+.makeup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.makeup-card { background: var(--surface); border-radius: 14px; padding: 14px; }
+.makeup-card .mk-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--s-accent); }
+.makeup-card .mk-name { font-size: 14px; font-weight: 500; color: var(--text-1); margin-top: 4px; }
+.makeup-card .mk-desc { font-size: 12px; color: var(--text-2); margin-top: 4px; line-height: 1.5; }
+.makeup-swatches { display: flex; gap: 4px; margin-top: 10px; }
+.mk-swatch { flex: 1; height: 20px; border-radius: 4px; }
+
+/* ========================
+   WARDROBE TABS
+======================== */
+.ward-tab-bar { display: flex; gap: 0; margin-bottom: 28px; border-bottom: 1px solid var(--border); }
+.wtab { padding: 10px 20px; font-size: 13px; font-weight: 500; color: var(--text-3); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-family: var(--font-body); transition: all 0.15s; margin-bottom: -1px; }
+.wtab:hover { color: var(--text-1); }
+.wtab.on { color: var(--text-1); border-bottom-color: var(--s-accent); }
+.wt-panel { display: none; }
+.wt-panel.active { display: block; }
+.gap-full { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+.gap-score-hero { font-family: var(--font-display); font-size: 72px; font-weight: 400; line-height: 1; color: var(--text-1); }
+</style>
+</head>
+<body>
+<div id="app" data-season="dark-autumn">
+
+  <!-- ========================
+       SIDEBAR
+  ======================== -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="wordmark">Hue Harmony</div>
+      <div class="wordmark-sub">The Hue Edit</div>
+    </div>
+
+    <div class="sidebar-season" onclick="go('onboarding')">
+      <div class="ss-label">Your Season</div>
+      <div class="ss-name" id="sb-season-name">Dark Autumn</div>
+      <div class="ss-edit">Tap to change →</div>
+      <div class="ss-pals">
+        <span style="background:#3C1A08"></span>
+        <span style="background:#8C3A1C"></span>
+        <span style="background:#2A4A2A"></span>
+        <span style="background:#B8820A"></span>
+        <span style="background:#4A1E3C"></span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-link on" id="nav-home" onclick="go('home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Home
+      </button>
+      <button class="nav-link" id="nav-discover" onclick="go('discover')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Discover
+      </button>
+<button class="nav-link" id="nav-wardrobe" onclick="go('wardrobe')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>
+        Wardrobe
+      </button>
+      <button class="nav-link" id="nav-season" onclick="go('season')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        My Season
+      </button>
+      <button class="nav-link" id="nav-settings" onclick="go('settings')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
+    </nav>
+
+    <div class="sidebar-foot">
+      <p>Showing results for<br><strong style="color:var(--text-1)" id="sb-foot-name">Dark Autumn</strong></p>
+    </div>
+  </aside>
+
+  <!-- ========================
+       MAIN CONTENT
+  ======================== -->
+  <main class="main">
+
+    <!-- ONBOARDING -->
+    <div id="s-onboarding" class="screen">
+      <div class="ob-inner">
+        <div class="wordmark">Hue Harmony</div>
+        <div class="wordmark-sub" style="margin-bottom:8px">The Hue Edit</div>
+        <p>Your personal color intelligence system. Select your season to personalize your entire experience.</p>
+
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px">Choose your season — 12 sub-types</div>
+
+        <div class="season-grid">
+  <div class="sopt" onclick="pickSeason(this,'light-spring','Spring','Light Spring')">
+    <div class="spal"><div style="background:#F7B7A3"></div><div style="background:#AEE6E6"></div><div style="background:#FFF2A6"></div><div style="background:#F9AFA3"></div></div>
+    <div class="slabel"><div class="sfam">Spring</div><div class="sname">Light Spring</div></div>
+  </div>
+  <div class="sopt" onclick="pickSeason(this,'true-spring','Spring','True Spring')">
+    <div class="spal"><div style="background:#FFC94A"></div><div style="background:#FF6F61"></div><div style="background:#FFB300"></div><div style="background:#FF8C42"></div></div>
+    <div class="slabel"><div class="sfam">Spring</div><div class="sname">True Spring</div></div>
+  </div>
+  <div class="sopt" onclick="pickSeason(this,'bright-spring','Spring','Bright Spring')">
+    <div class="spal"><div style="background:#00CFC1"></div><div style="background:#FF3B30"></div><div style="background:#FF5E5B"></div><div style="background:#FF8F6B"></div></div>
+    <div class="slabel"><div class="sfam">Spring</div><div class="sname">Bright Spring</div></div>
+  </div>
+  <div class="sopt" onclick="pickSeason(this,'light-summer','Summer','Light Summer')">
+    <div class="spal"><div style="background:#BFE4FF"></div><div style="background:#F7C6D9"></div><div style="background:#E6D6F5"></div><div style="background:#C9D6FF"></div></div>
+    <div class="slabel"><div class="sfam">Summer</div><div class="sname">Light Summer</div></div>
+  </div>
+  <div class="sopt" onclick="pickSeason(this,'true-summer','Summer','True Summer')">
+    <div class="spal"><div style="background:#C5B4E3"></div><div style="background:#B7BCC5"></div><div style="background:#9FB7D3"></div><div style="background:#D8A7B1"></div></div>
+    <div class="slabel"><div class="sfam">Summer</div><div class="sname">True Summer</div></div>
+  </div>
+  <div class="sopt" onclick="pickSeason(this,'soft-summer','Summer','Soft Summer')">
+    <div class="spal"><div style="background:#C48793"></div><div style="background:#6E8F8B"></div><div style="background:#8E6C88"></div><div style="background:#A89FB5"></div></div>
+    <div class="slabel"><div class="sfam">Summer</div><div class="sname">Soft Summer</div></div>
+  </div>
+  <div class="sopt" onclick="pickSeason(this,'soft-autumn','Autumn','Soft Autumn')">
+    <div class="spal"><div style="background:#7A8450"></div><div style="background:#D9A07B"></div><div style="background:#C9A227"></div><div style="background:#A68A75"></div></div>
+    <div class="slabel"><div class="sfam">Autumn</div><div class="sname">Soft Autumn</div></div>
+  </div>
+  <div class="sopt" onclick="pickSeason(this,'true-autumn','Autumn','True Autumn')">
+    <div class="spal"><div style="background:#D4A017"></div><div style="background:#C1440E"></div><div style="background:#B7410E"></div><div style="background:#E2725B"></div></div>
+    <div class="slabel"><div class="sfam">Autumn</div><div class="sname">True Autumn</div></div>
+  </div>
+  <div class="sopt on" onclick="pickSeason(this,'dark-autumn','Autumn','Dark Autumn')">
+    <div class="spal"><div style="background:#0F4C5C"></div><div style="background:#3B2F2F"></div><div style="background:#8B4A2A"></div><div style="background:#CD7F32"></div></div>
+    <div class="slabel"><div class="sfam">Autumn</div><div class="sname">Dark Autumn</div></div>
+  </div>
+  <div class="sopt" onclick="pickSeason(this,'dark-winter','Winter','Dark Winter')">
+    <div class="spal"><div style="background:#1F3C88"></div><div style="background:#5A0F2E"></div><div style="background:#0A1F44"></div><div style="background:#A4133C"></div></div>
+    <div class="slabel"><div class="sfam">Winter</div><div class="sname">Dark Winter</div></div>
+  </div>
+  <div class="sopt" onclick="pickSeason(this,'true-winter','Winter','True Winter')">
+    <div class="spal"><div style="background:#009B77"></div><div style="background:#000000"></div><div style="background:#0F52BA"></div><div style="background:#D10068"></div></div>
+    <div class="slabel"><div class="sfam">Winter</div><div class="sname">True Winter</div></div>
+  </div>
+  <div class="sopt" onclick="pickSeason(this,'bright-winter','Winter','Bright Winter')">
+    <div class="spal"><div style="background:#FF007F"></div><div style="background:#007BFF"></div><div style="background:#FF00FF"></div><div style="background:#0B0B0B"></div></div>
+    <div class="slabel"><div class="sfam">Winter</div><div class="sname">Bright Winter</div></div>
+  </div>
+</div>
+
+        <div class="ob-cta-row">
+          <button class="primary" onclick="enterApp()">Start Discovering →</button>
+          <p>You can change this at any time from the sidebar</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOME -->
+    <div id="s-home" class="screen active">
+      <div class="page-wrap">
+        <div class="home-topbar">
+          <div>
+            <div class="eyebrow" id="home-season-lbl">Dark Autumn</div>
+            <h1 class="page-title" style="margin-top:6px">Good morning,<br>Danielle.</h1>
+          </div>
+          <button class="btn btn-outline" onclick="go('season')">View my season profile →</button>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="section-title">New In For You</div>
+          <button class="btn btn-outline" style="font-size:12px;padding:7px 16px">See all</button>
+        </div>
+        <div class="home-grid" style="margin-bottom:40px">
+          <div class="pcard">
+            <div class="pcard-img">
+              <img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/girl-is-model-brown-suit-shooting-clothes-fashion-store.jpg" alt="Rust Blazer">
+              <button class="heart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+            </div>
+            <div class="pcard-info"><div class="pcard-brand">COS</div><div class="pcard-name">Wool Blazer in Terracotta</div><div class="pcard-price">£185</div></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-img">
+              <img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/stock-photo-portrait-gorgeous-young-brunette-girl-with-professional-make-up-wearing-buttoned-up-emerald-green-dress-posing-street-blurred-background.jpg" alt="Emerald Dress">
+              <button class="heart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+            </div>
+            <div class="pcard-info"><div class="pcard-brand">ARKET</div><div class="pcard-name">Ribbed Knit in Forest</div><div class="pcard-price">£89</div></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-img">
+              <img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/stylish-women039s-clothing-looks-spectacular-girl-casual-clothes-street-fashion-fashion-acces.jpg" alt="Mustard Look">
+              <button class="heart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+            </div>
+            <div class="pcard-info"><div class="pcard-brand">Madewell</div><div class="pcard-name">Camel Midi Skirt</div><div class="pcard-price">$98</div></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-img">
+              <img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/sunlight-shadow-reflections-wall-beautiful-woman-black-shirt-brown-trousers-stay-against-wall.jpg" alt="Black Shirt Mustard Trousers">
+              <button class="heart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+            </div>
+            <div class="pcard-info"><div class="pcard-brand">Everlane</div><div class="pcard-name">Chocolate Trench Coat</div><div class="pcard-price">$298</div></div>
+          </div>
+        </div>
+
+        <div class="home-lower">
+          <div class="feat-block">
+            <div class="feat-content">
+              <div class="eyebrow">Featured Brand this Week</div>
+              <h3>Aritzia</h3>
+              <p>Quiet luxury with warm neutrals that align beautifully with your Autumn palette. Their Studio Collection this season leans heavily into camel, espresso, and forest tones.</p>
+            </div>
+            <div class="feat-hero-img">
+              <img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/young-woman-stylish-oversized-blazer-cap-exudes-confidence-charm-trendy-urban-setting.jpg" alt="Aritzia look">
+            </div>
+            <div class="feat-foot">
+              <p>4 new pieces this week · 92% season match</p>
+              <button class="btn btn-dark">Explore Aritzia →</button>
+            </div>
+          </div>
+
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <div class="section-title">Capsule Picks</div>
+              <button class="btn btn-outline" style="font-size:12px;padding:7px 16px" onclick="go('capsule')">See all</button>
+            </div>
+            <div class="capsule-sidebar">
+              <div class="cap-mini-card">
+                <div class="cap-mini-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/vogue-female-coat-young-glamour-woman-wearing-stylish-fashion-dress-fashion-model-studio.jpg" alt="Wool Coat"></div>
+                <div class="cap-mini-info"><div class="cm-brand">COS</div><div class="cm-name">Oversized Wool Coat</div><div class="cm-price">£360 · Investment</div></div>
+              </div>
+              <div class="cap-mini-card">
+                <div class="cap-mini-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/sunlight-shadow-reflections-wall-beautiful-woman-black-shirt-brown-trousers-stay-against-wall.jpg" alt="Camel Trousers"></div>
+                <div class="cap-mini-info"><div class="cm-brand">Everlane</div><div class="cm-name">Camel Wide-Leg Trousers</div><div class="cm-price">$118 · Accessible</div></div>
+              </div>
+              <div class="cap-mini-card">
+                <div class="cap-mini-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/girl-is-model-brown-suit-shooting-clothes-fashion-store.jpg" alt="Terracotta Dress"></div>
+                <div class="cap-mini-info"><div class="cm-brand">Aritzia</div><div class="cm-name">Terracotta Wrap Dress</div><div class="cm-price">$168 · Accessible</div></div>
+              </div>
+              <div class="cap-mini-card">
+                <div class="cap-mini-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/full-length-young-african-american-woman-stylish-maroon-suit-with-wide-leg-pants-posing.jpg" alt="Plum Skirt"></div>
+                <div class="cap-mini-info"><div class="cm-brand">Reformation</div><div class="cm-name">Plum Silk Midi Skirt</div><div class="cm-price">$218 · Investment</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="inspo-section">
+          <div class="inspo-heading">
+            <div class="section-title">Style Inspiration</div>
+            <button class="btn btn-outline" style="font-size:12px;padding:7px 16px">See all</button>
+          </div>
+          <div class="inspo-maso">
+            <div class="inspo-item tall">
+              <div class="inspo-bg" style="background-image:url('/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/full-length-young-african-american-woman-stylish-maroon-suit-with-wide-leg-pants-posing.jpg')">
+                <div class="inspo-overlay"></div>
+                <div class="inspo-lbl">Autumn Evening</div>
+              </div>
+            </div>
+            <div class="inspo-item">
+              <div class="inspo-bg" style="background-image:url('/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/stylish-outfit-featuring-brown-boots-striped-sweater-chic-handbag-any-occasion.jpg')">
+                <div class="inspo-overlay"></div>
+                <div class="inspo-lbl">Forest &amp; Camel</div>
+              </div>
+            </div>
+            <div class="inspo-item">
+              <div class="inspo-bg" style="background-image:url('/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/young-woman-standing-against-wall.jpg')">
+                <div class="inspo-overlay"></div>
+                <div class="inspo-lbl">Camel &amp; Chocolate</div>
+              </div>
+            </div>
+            <div class="inspo-item">
+              <div class="inspo-bg" style="background-image:url('/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/portrait-young-woman-standing-by-railing.jpg')">
+                <div class="inspo-overlay"></div>
+                <div class="inspo-lbl">Plum &amp; Cream</div>
+              </div>
+            </div>
+            <div class="inspo-item">
+              <div class="inspo-bg" style="background-image:url('/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/stylish-women039s-clothing-looks-spectacular-girl-casual-clothes-street-fashion-fashion-acces (1).jpg')">
+                <div class="inspo-overlay"></div>
+                <div class="inspo-lbl">Mustard &amp; Espresso</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DISCOVER -->
+    <div id="s-discover" class="screen">
+      <div class="page-wrap">
+        <div style="margin-bottom:20px">
+          <h1 class="page-title">Discover</h1>
+          <p class="page-sub">Brands curated for Dark Autumn — ranked by palette alignment</p>
+        </div>
+        <div class="discover-topbar">
+          <div class="discover-filters" id="discover-chips">
+            <button class="chip on" onclick="discoverFilter(this,'all')">All</button>
+            <button class="chip" onclick="discoverFilter(this,'clothing')">Clothing</button>
+            <button class="chip" onclick="discoverFilter(this,'shoes')">Shoes</button>
+            <button class="chip" onclick="discoverFilter(this,'accessories')">Accessories</button>
+            <button class="chip" onclick="discoverFilter(this,'investment')">Investment</button>
+            <button class="chip" onclick="discoverFilter(this,'budget')">Budget</button>
+          </div>
+          <div class="discover-search">
+            <span class="ds-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg></span>
+            <input type="text" placeholder="Search brands" oninput="discoverSearch(this.value)">
+          </div>
+        </div>
+        <div class="brand-grid-new" id="brand-grid-new">
+
+          <div class="bcard-new" data-tags="clothing investment" data-brand="the row">
+            <div class="bcard-hd">
+              <div class="bcard-id"><div class="bcard-bname">The Row</div><div class="bmeta"><span class="tag tag-mute">quiet luxury</span><span class="tag tag-mute">impeccable cut</span><span class="tag tag-accent">$$$</span></div></div>
+              <div class="bcard-rt"><div class="bcard-pct-num">95%</div><div class="bcard-pct-lbl">Match</div></div>
+            </div>
+            <div class="bcard-affinity">Warm neutrals and impeccable structure — quietly perfect for your season's depth.</div>
+            <div class="bcard-imgs">
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/vogue-female-coat-young-glamour-woman-wearing-stylish-fashion-dress-fashion-model-studio.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/sunlight-shadow-reflections-wall-beautiful-woman-black-shirt-brown-trousers-stay-against-wall.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/seasonal-autumn-fashion-modern-young-woman-wearing-fashionable-warm-clothes-posing.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/full-length-young-african-american-woman-stylish-maroon-suit-with-wide-leg-pants-posing.jpg" alt=""></div>
+            </div>
+          </div>
+
+          <div class="bcard-new" data-tags="clothing budget" data-brand="mango">
+            <div class="bcard-hd">
+              <div class="bcard-id"><div class="bcard-bname">Mango</div><div class="bmeta"><span class="tag tag-mute">warm palette</span><span class="tag tag-mute">autumn tones</span><span class="tag tag-accent">$</span></div></div>
+              <div class="bcard-rt"><div class="bcard-pct-num">90%</div><div class="bcard-pct-lbl">Match</div></div>
+            </div>
+            <div class="bcard-affinity">One of the most consistently warm-toned accessible brands. Camel, rust, and olive are core to their identity.</div>
+            <div class="bcard-imgs">
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/girl-is-model-brown-suit-shooting-clothes-fashion-store.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/young-woman-stylish-oversized-blazer-cap-exudes-confidence-charm-trendy-urban-setting.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/sunlight-shadow-reflections-wall-beautiful-woman-black-shirt-brown-trousers-stay-against-wall.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/stylish-outfit-featuring-brown-boots-striped-sweater-chic-handbag-any-occasion.jpg" alt=""></div>
+            </div>
+          </div>
+
+          <div class="bcard-new" data-tags="clothing investment accessories" data-brand="khaite">
+            <div class="bcard-hd">
+              <div class="bcard-id"><div class="bcard-bname">Khaite</div><div class="bmeta"><span class="tag tag-mute">luxe edge</span><span class="tag tag-mute">rich texture</span><span class="tag tag-accent">$$$</span></div></div>
+              <div class="bcard-rt"><div class="bcard-pct-num">88%</div><div class="bcard-pct-lbl">Match</div></div>
+            </div>
+            <div class="bcard-affinity">Rich textures and earthy edge — aligns naturally with your depth and contrast.</div>
+            <div class="bcard-imgs">
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/full-length-young-african-american-woman-stylish-maroon-suit-with-wide-leg-pants-posing.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/stock-photo-portrait-gorgeous-young-brunette-girl-with-professional-make-up-wearing-buttoned-up-emerald-green-dress-posing-street-blurred-background.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/girl-model-brunette-long-brown-coat-posing.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/vogue-female-coat-young-glamour-woman-wearing-stylish-fashion-dress-fashion-model-studio.jpg" alt=""></div>
+            </div>
+          </div>
+
+          <div class="bcard-new" data-tags="clothing" data-brand="aritzia">
+            <div class="bcard-hd">
+              <div class="bcard-id"><div class="bcard-bname">Aritzia</div><div class="bmeta"><span class="tag tag-mute">polished capsule</span><span class="tag tag-mute">warm neutrals</span><span class="tag tag-accent">$$</span></div></div>
+              <div class="bcard-rt"><div class="bcard-pct-num">86%</div><div class="bcard-pct-lbl">Match</div></div>
+            </div>
+            <div class="bcard-affinity">Polished, warm-neutral palette with structured silhouettes that carry your season well.</div>
+            <div class="bcard-imgs">
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/girl-is-model-brown-suit-shooting-clothes-fashion-store.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/full-length-young-african-american-woman-stylish-maroon-suit-with-wide-leg-pants-posing.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/young-woman-stylish-oversized-blazer-cap-exudes-confidence-charm-trendy-urban-setting.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/seasonal-autumn-fashion-modern-young-woman-wearing-fashionable-warm-clothes-posing.jpg" alt=""></div>
+            </div>
+          </div>
+
+          <div class="bcard-new" data-tags="clothing shoes budget" data-brand="zara">
+            <div class="bcard-hd">
+              <div class="bcard-id"><div class="bcard-bname">Zara</div><div class="bmeta"><span class="tag tag-mute">seasonal depth</span><span class="tag tag-mute">earthy tones</span><span class="tag tag-accent">$</span></div></div>
+              <div class="bcard-rt"><div class="bcard-pct-num">84%</div><div class="bcard-pct-lbl">Match</div></div>
+            </div>
+            <div class="bcard-affinity">Leans warm in fall/winter. Focus on terracotta, deep green, and chocolate brown — filter away from the brights.</div>
+            <div class="bcard-imgs">
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/seasonal-autumn-fashion-modern-young-woman-wearing-fashionable-warm-clothes-posing.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/young-woman-stylish-oversized-blazer-cap-exudes-confidence-charm-trendy-urban-setting.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/portrait-young-woman-standing-by-railing.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/young-woman-standing-against-wall.jpg" alt=""></div>
+            </div>
+          </div>
+
+          <div class="bcard-new" data-tags="clothing budget" data-brand="abercrombie">
+            <div class="bcard-hd">
+              <div class="bcard-id"><div class="bcard-bname">Abercrombie</div><div class="bmeta"><span class="tag tag-mute">deep neutrals</span><span class="tag tag-mute">flattering fit</span><span class="tag tag-accent">$</span></div></div>
+              <div class="bcard-rt"><div class="bcard-pct-num">82%</div><div class="bcard-pct-lbl">Match</div></div>
+            </div>
+            <div class="bcard-affinity">Strong in espresso, cream, and olive — flattering silhouettes with good fabric quality at an accessible price.</div>
+            <div class="bcard-imgs">
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/sunlight-shadow-reflections-wall-beautiful-woman-black-shirt-brown-trousers-stay-against-wall.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/stylish-outfit-featuring-brown-boots-striped-sweater-chic-handbag-any-occasion.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/full-length-young-african-american-woman-stylish-maroon-suit-with-wide-leg-pants-posing.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/vogue-female-coat-young-glamour-woman-wearing-stylish-fashion-dress-fashion-model-studio.jpg" alt=""></div>
+            </div>
+          </div>
+
+          <div class="bcard-new" data-tags="clothing" data-brand="free people">
+            <div class="bcard-hd">
+              <div class="bcard-id"><div class="bcard-bname">Free People</div><div class="bmeta"><span class="tag tag-mute">rich textures</span><span class="tag tag-mute">earthy layers</span><span class="tag tag-accent">$$</span></div></div>
+              <div class="bcard-rt"><div class="bcard-pct-num">80%</div><div class="bcard-pct-lbl">Match</div></div>
+            </div>
+            <div class="bcard-affinity">Earthy textures and layered warmth that feel organic and grounded by default — made for your depth.</div>
+            <div class="bcard-imgs">
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/seasonal-autumn-fashion-modern-young-woman-wearing-fashionable-warm-clothes-posing.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/stylish-outfit-featuring-brown-boots-striped-sweater-chic-handbag-any-occasion.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/girl-model-brunette-long-brown-coat-posing.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/young-woman-standing-against-wall.jpg" alt=""></div>
+            </div>
+          </div>
+
+          <div class="bcard-new" data-tags="clothing" data-brand="sézane">
+            <div class="bcard-hd">
+              <div class="bcard-id"><div class="bcard-bname">Sézane</div><div class="bmeta"><span class="tag tag-mute">warm vintage</span><span class="tag tag-mute">color + detail</span><span class="tag tag-accent">$$</span></div></div>
+              <div class="bcard-rt"><div class="bcard-pct-num">78%</div><div class="bcard-pct-lbl">Match</div></div>
+            </div>
+            <div class="bcard-affinity">Warm vintage palette — mustard, textured knits, and earthy tones feel natural and considered here.</div>
+            <div class="bcard-imgs">
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/stock-photo-portrait-gorgeous-young-brunette-girl-with-professional-make-up-wearing-buttoned-up-emerald-green-dress-posing-street-blurred-background.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/girl-model-brunette-long-brown-coat-posing.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/portrait-young-woman-standing-by-railing.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/girl-is-model-brown-suit-shooting-clothes-fashion-store.jpg" alt=""></div>
+            </div>
+          </div>
+
+          <div class="bcard-new" data-tags="clothing budget" data-brand="quince">
+            <div class="bcard-hd">
+              <div class="bcard-id"><div class="bcard-bname">Quince</div><div class="bmeta"><span class="tag tag-mute">elevated basics</span><span class="tag tag-mute">warm tones</span><span class="tag tag-accent">$</span></div></div>
+              <div class="bcard-rt"><div class="bcard-pct-num">76%</div><div class="bcard-pct-lbl">Match</div></div>
+            </div>
+            <div class="bcard-affinity">Elevated basics in warm tones at accessible prices. Camel cashmere and espresso knits are your anchor pieces here.</div>
+            <div class="bcard-imgs">
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/sunlight-shadow-reflections-wall-beautiful-woman-black-shirt-brown-trousers-stay-against-wall.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/vogue-female-coat-young-glamour-woman-wearing-stylish-fashion-dress-fashion-model-studio.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/stylish-outfit-featuring-brown-boots-striped-sweater-chic-handbag-any-occasion.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/full-length-young-african-american-woman-stylish-maroon-suit-with-wide-leg-pants-posing.jpg" alt=""></div>
+            </div>
+          </div>
+
+          <div class="bcard-new" data-tags="clothing accessories" data-brand="& other stories">
+            <div class="bcard-hd">
+              <div class="bcard-id"><div class="bcard-bname">&amp; Other Stories</div><div class="bmeta"><span class="tag tag-mute">European editorial</span><span class="tag tag-mute">warm-muted</span><span class="tag tag-accent">$$</span></div></div>
+              <div class="bcard-rt"><div class="bcard-pct-num">73%</div><div class="bcard-pct-lbl">Match</div></div>
+            </div>
+            <div class="bcard-affinity">European editorial sensibility, often warm-muted. A curated find zone — worth filtering for your palette.</div>
+            <div class="bcard-imgs">
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/stock-photo-portrait-gorgeous-young-brunette-girl-with-professional-make-up-wearing-buttoned-up-emerald-green-dress-posing-street-blurred-background.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/seasonal-autumn-fashion-modern-young-woman-wearing-fashionable-warm-clothes-posing.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/gold-chain-accessory-with-white-shirt-jacket-business-woman-style.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/portrait-young-woman-standing-by-railing.jpg" alt=""></div>
+            </div>
+          </div>
+
+          <div class="bcard-new" data-tags="clothing shoes budget" data-brand="madewell">
+            <div class="bcard-hd">
+              <div class="bcard-id"><div class="bcard-bname">Madewell</div><div class="bmeta"><span class="tag tag-mute">warm denim</span><span class="tag tag-mute">warm staples</span><span class="tag tag-accent">$</span></div></div>
+              <div class="bcard-rt"><div class="bcard-pct-num">70%</div><div class="bcard-pct-lbl">Match</div></div>
+            </div>
+            <div class="bcard-affinity">Warm denim staples — camel, rust, and olive work naturally within your season.</div>
+            <div class="bcard-imgs">
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/stylish-outfit-featuring-brown-boots-striped-sweater-chic-handbag-any-occasion.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/sunlight-shadow-reflections-wall-beautiful-woman-black-shirt-brown-trousers-stay-against-wall.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/young-woman-standing-against-wall.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/portrait-young-woman-standing-by-railing.jpg" alt=""></div>
+            </div>
+          </div>
+
+          <div class="bcard-new" data-tags="clothing" data-brand="reformation">
+            <div class="bcard-hd">
+              <div class="bcard-id"><div class="bcard-bname">Reformation</div><div class="bmeta"><span class="tag tag-mute">color-driven</span><span class="tag tag-mute">feminine cuts</span><span class="tag tag-accent">$$</span></div></div>
+              <div class="bcard-rt"><div class="bcard-pct-num">67%</div><div class="bcard-pct-lbl">Match</div></div>
+            </div>
+            <div class="bcard-affinity">Strong autumn color moments and feminine silhouettes — occasional deep-tone wins make it worth exploring.</div>
+            <div class="bcard-imgs">
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/full-length-young-african-american-woman-stylish-maroon-suit-with-wide-leg-pants-posing.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/girl-is-model-brown-suit-shooting-clothes-fashion-store.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/portrait-young-woman-standing-by-railing.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/stock-photo-portrait-gorgeous-young-brunette-girl-with-professional-make-up-wearing-buttoned-up-emerald-green-dress-posing-street-blurred-background.jpg" alt=""></div>
+            </div>
+          </div>
+
+          <div class="bcard-new bcard-caution" data-tags="clothing budget" data-brand="uniqlo">
+            <div class="bcard-hd">
+              <div class="bcard-id"><div class="bcard-bname">Uniqlo</div><div class="bmeta"><span class="tag tag-mute">foundational staples</span><span class="tag tag-mute">layering</span><span class="tag tag-accent">$</span></div></div>
+              <div class="bcard-rt"><div class="bcard-pct-num">60%</div><div class="bcard-pct-lbl">Match</div></div>
+            </div>
+            <div class="bcard-caution-badge">⚠ Approach with intention</div>
+            <div class="bcard-affinity">Reliable basics, but can feel flat or too light for your depth. Focus on cream, olive, and deep brown only.</div>
+            <div class="bcard-imgs">
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/young-woman-stylish-oversized-blazer-cap-exudes-confidence-charm-trendy-urban-setting.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/stylish-outfit-featuring-brown-boots-striped-sweater-chic-handbag-any-occasion.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/girl-is-model-brown-suit-shooting-clothes-fashion-store.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/young-woman-standing-against-wall.jpg" alt=""></div>
+            </div>
+          </div>
+
+          <div class="bcard-new bcard-caution" data-tags="clothing" data-brand="cos">
+            <div class="bcard-hd">
+              <div class="bcard-id"><div class="bcard-bname">COS</div><div class="bmeta"><span class="tag tag-mute">elevated minimal</span><span class="tag tag-mute">cool-muted</span><span class="tag tag-accent">$$</span></div></div>
+              <div class="bcard-rt"><div class="bcard-pct-num">55%</div><div class="bcard-pct-lbl">Match</div></div>
+            </div>
+            <div class="bcard-caution-badge">⚠ Approach with intention</div>
+            <div class="bcard-affinity">Often reads too cool for your warmth. Shop selectively — look for warmer neutrals only and avoid stark whites and greys.</div>
+            <div class="bcard-imgs">
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/vogue-female-coat-young-glamour-woman-wearing-stylish-fashion-dress-fashion-model-studio.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/seasonal-autumn-fashion-modern-young-woman-wearing-fashionable-warm-clothes-posing.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/stock-photo-portrait-gorgeous-young-brunette-girl-with-professional-make-up-wearing-buttoned-up-emerald-green-dress-posing-street-blurred-background.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/girl-model-brunette-long-brown-coat-posing.jpg" alt=""></div>
+            </div>
+          </div>
+
+          <div class="bcard-new bcard-caution" data-tags="clothing shoes budget" data-brand="everlane">
+            <div class="bcard-hd">
+              <div class="bcard-id"><div class="bcard-bname">Everlane</div><div class="bmeta"><span class="tag tag-mute">clean neutrals</span><span class="tag tag-mute">foundational</span><span class="tag tag-accent">$</span></div></div>
+              <div class="bcard-rt"><div class="bcard-pct-num">52%</div><div class="bcard-pct-lbl">Match</div></div>
+            </div>
+            <div class="bcard-caution-badge">⚠ Approach with intention</div>
+            <div class="bcard-affinity">Clean and consistent, but skews cool-neutral. Filter toward camel, olive, and brown — avoid their grey and white core.</div>
+            <div class="bcard-imgs">
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/sunlight-shadow-reflections-wall-beautiful-woman-black-shirt-brown-trousers-stay-against-wall.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/stylish-outfit-featuring-brown-boots-striped-sweater-chic-handbag-any-occasion.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/young-woman-standing-against-wall.jpg" alt=""></div>
+              <div class="bcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/portrait-young-woman-standing-by-railing.jpg" alt=""></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- WARDROBE -->
+    <div id="s-wardrobe" class="screen">
+      <div class="page-wrap">
+        <div class="ward-toprow">
+          <div class="left">
+            <h1>My Wardrobe</h1>
+            <p>24 items · 21 season-aligned</p>
+          </div>
+          <button class="add-btn" onclick="document.getElementById('ward-upload').click()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>
+            Add Item
+          </button>
+          <input type="file" id="ward-upload" accept="image/*" multiple style="display:none" onchange="wardrobeUpload(this)">
+        </div>
+        <div class="ward-tab-bar">
+          <button class="wtab on" onclick="wardTab(this,'items')">My Items</button>
+          <button class="wtab" onclick="wardTab(this,'blueprint')">Capsule Blueprint</button>
+          <button class="wtab" onclick="wardTab(this,'gaps')">Gap Analysis</button>
+        </div>
+
+        <!-- MY ITEMS -->
+        <div id="wt-items" class="wt-panel active">
+          <div style="margin-bottom:20px">
+            <div class="chip-row">
+              <button class="chip on" onclick="wardrobeFilter(this,'all')">All</button>
+              <button class="chip" onclick="wardrobeFilter(this,'tops')">Tops</button>
+              <button class="chip" onclick="wardrobeFilter(this,'bottoms')">Bottoms</button>
+              <button class="chip" onclick="wardrobeFilter(this,'dresses')">Dresses</button>
+              <button class="chip" onclick="wardrobeFilter(this,'outerwear')">Outerwear</button>
+              <button class="chip" onclick="wardrobeFilter(this,'accessories')">Accessories</button>
+            </div>
+          </div>
+          <p class="ward-hint">The more pieces you add, the better we can assess your needs</p>
+          <div class="ward-grid-new" id="ward-grid" style="grid-template-columns: repeat(6, 1fr)">
+            <div class="wthumb" data-cat="tops"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/seasonal-autumn-fashion-modern-young-woman-wearing-fashionable-warm-clothes-posing.jpg" alt=""></div>
+            <div class="wthumb" data-cat="tops"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/attractive-girl-cozy-knitted-woolen-colorful-dress.jpg" alt=""></div>
+            <div class="wthumb" data-cat="outerwear"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/vogue-female-coat-young-glamour-woman-wearing-stylish-fashion-dress-fashion-model-studio.jpg" alt=""></div>
+            <div class="wthumb" data-cat="bottoms"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/full-length-young-african-american-woman-stylish-maroon-suit-with-wide-leg-pants-posing.jpg" alt=""></div>
+            <div class="wthumb" data-cat="tops"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/vibrant-stylish-woman-purple-outfit-poses-confidently-against-pastel-pink-backdrop.jpg" alt=""><div class="wthumb-flag">Too cool</div></div>
+            <div class="wthumb" data-cat="outerwear"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/model-woman-green-raincoat.jpg" alt=""></div>
+            <div class="wthumb" data-cat="dresses"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/stock-photo-portrait-gorgeous-young-brunette-girl-with-professional-make-up-wearing-buttoned-up-emerald-green-dress-posing-street-blurred-background.jpg" alt=""></div>
+            <div class="wthumb" data-cat="bottoms"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/sunlight-shadow-reflections-wall-beautiful-woman-black-shirt-brown-trousers-stay-against-wall.jpg" alt=""></div>
+            <div class="wthumb" data-cat="tops"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/girl-is-model-brown-suit-shooting-clothes-fashion-store.jpg" alt=""></div>
+            <div class="wthumb" data-cat="tops"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/elegant-coral-blouse-with-puff-sleeves-perfect-stylish-wardrobe-update.jpg" alt=""><div class="wthumb-flag">Too bright</div></div>
+            <div class="wthumb" data-cat="outerwear"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/young-woman-stylish-oversized-blazer-cap-exudes-confidence-charm-trendy-urban-setting.jpg" alt=""></div>
+            <div class="wthumb" data-cat="outerwear"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/girl-model-brunette-long-brown-coat-posing.jpg" alt=""><div class="wthumb-flag">Duplicate</div></div>
+            <div class="wthumb" data-cat="tops"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/confident-young-woman-stylish-green-outfit-poses-against-vibrant-blue-background.jpg" alt=""><div class="wthumb-flag">Too cool</div></div>
+            <div class="wthumb" data-cat="shoes"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/closeup-female-legs-black-leather-chelsea-boots-women-s-comfortable-spring-casual-shoes-black-women-s-spring-chelsea-boots.jpg" alt=""></div>
+            <div class="wthumb" data-cat="shoes"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/womens-feet-turquoise-sneakers-top-view-photo-pov.jpg" alt=""><div class="wthumb-flag">Too cool</div></div>
+            <div class="wthumb-add" onclick="document.getElementById('ward-upload').click()"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14"/></svg></div>
+          </div>
+        </div>
+
+        <!-- CAPSULE BLUEPRINT -->
+        <div id="wt-blueprint" class="wt-panel">
+          <p class="page-sub" style="margin-bottom:24px">The ideal Dark Autumn capsule — pieces worth building toward</p>
+          <div class="cat-tabs">
+            <button class="ctab on" onclick="capsuleFilter(this,'all')">All</button>
+            <button class="ctab" onclick="capsuleFilter(this,'tops')">Tops</button>
+            <button class="ctab" onclick="capsuleFilter(this,'bottoms')">Bottoms</button>
+            <button class="ctab" onclick="capsuleFilter(this,'outerwear')">Outerwear</button>
+            <button class="ctab" onclick="capsuleFilter(this,'dresses')">Dresses</button>
+            <button class="ctab" onclick="capsuleFilter(this,'shoes')">Shoes</button>
+            <button class="ctab" onclick="capsuleFilter(this,'accessories')">Accessories</button>
+          </div>
+          <div class="capsule-grid" id="capsule-grid">
+            <div class="pcard" data-cat="outerwear"><div class="pcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/vogue-female-coat-young-glamour-woman-wearing-stylish-fashion-dress-fashion-model-studio.jpg" alt="Forest Green Coat"><span class="tier">Investment</span></div><div class="pcard-info"><div class="pcard-brand">COS</div><div class="pcard-name">Oversized Wool Coat</div><div class="pcard-why">Forest green anchors your palette</div></div></div>
+            <div class="pcard" data-cat="bottoms"><div class="pcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/stock-photo-portrait-gorgeous-young-brunette-girl-with-professional-make-up-wearing-buttoned-up-emerald-green-dress-posing-street-blurred-background.jpg" alt="Emerald Green"><span class="tier">Investment</span></div><div class="pcard-info"><div class="pcard-brand">ARKET</div><div class="pcard-name">Forest Green Trousers</div><div class="pcard-why">Autumn green grounds any look</div></div></div>
+            <div class="pcard" data-cat="tops"><div class="pcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/seasonal-autumn-fashion-modern-young-woman-wearing-fashionable-warm-clothes-posing.jpg" alt="Autumn Knit"><span class="tier">Accessible</span></div><div class="pcard-info"><div class="pcard-brand">Madewell</div><div class="pcard-name">Camel Ribbed Knit</div><div class="pcard-why">Warm tan — your go-to neutral</div></div></div>
+            <div class="pcard" data-cat="dresses"><div class="pcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/sunlight-shadow-reflections-wall-beautiful-woman-black-shirt-brown-trousers-stay-against-wall.jpg" alt="Black and Mustard"><span class="tier">Investment</span></div><div class="pcard-info"><div class="pcard-brand">Reformation</div><div class="pcard-name">Dark Chocolate Midi</div><div class="pcard-why">Deep brown is your true black</div></div></div>
+            <div class="pcard" data-cat="bottoms"><div class="pcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/full-length-young-african-american-woman-stylish-maroon-suit-with-wide-leg-pants-posing.jpg" alt="Maroon Suit"><span class="tier">Investment</span></div><div class="pcard-info"><div class="pcard-brand">Reformation</div><div class="pcard-name">Plum Silk Midi Skirt</div><div class="pcard-why">Plum is your unexpected neutral</div></div></div>
+            <div class="pcard" data-cat="bottoms"><div class="pcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/young-woman-stylish-oversized-blazer-cap-exudes-confidence-charm-trendy-urban-setting.jpg" alt="Brown Blazer"><span class="tier">Accessible</span></div><div class="pcard-info"><div class="pcard-brand">Everlane</div><div class="pcard-name">Mustard Wide-Leg Trousers</div><div class="pcard-why">Warm gold elevates everything</div></div></div>
+            <div class="pcard" data-cat="dresses"><div class="pcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/girl-is-model-brown-suit-shooting-clothes-fashion-store.jpg" alt="Terracotta Blazer"><span class="tier">Accessible</span></div><div class="pcard-info"><div class="pcard-brand">Aritzia</div><div class="pcard-name">Terracotta Wrap Dress</div><div class="pcard-why">Terracotta is your statement color</div></div></div>
+            <div class="pcard" data-cat="tops"><div class="pcard-img"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/stylish-women039s-clothing-looks-spectacular-girl-casual-clothes-street-fashion-fashion-acces (1).jpg" alt="Olive Green Blouse"><span class="tier">Investment</span></div><div class="pcard-info"><div class="pcard-brand">COS</div><div class="pcard-name">Dark Teal Silk Blouse</div><div class="pcard-why">Your cool accent — still warm-based</div></div></div>
+          </div>
+        </div>
+
+        <!-- GAP ANALYSIS -->
+        <div id="wt-gaps" class="wt-panel">
+          <div class="gap-full">
+            <div>
+              <div class="gap-score-block" style="margin-bottom:28px">
+                <div class="gap-score-hero">68%</div>
+                <div class="gap-score-lbl">of your capsule<br>is built</div>
+              </div>
+              <div style="font-family:var(--font-display);font-size:18px;font-weight:400;margin-bottom:16px">Wardrobe Breakdown</div>
+              <div class="gap-cat-row">
+                <div class="gap-cat-label">Tops</div>
+                <div class="gap-cat-bar"><div class="gap-cat-fill healthy" style="width:80%"></div></div>
+                <div class="gap-cat-count">8/10</div>
+              </div>
+              <div class="gap-cat-row">
+                <div class="gap-cat-label">Bottoms</div>
+                <div class="gap-cat-bar"><div class="gap-cat-fill" style="width:63%"></div></div>
+                <div class="gap-cat-count">5/8</div>
+              </div>
+              <div class="gap-cat-row">
+                <div class="gap-cat-label">Outerwear</div>
+                <div class="gap-cat-bar"><div class="gap-cat-fill" style="width:33%"></div></div>
+                <div class="gap-cat-count">1/3</div>
+              </div>
+              <div class="gap-cat-row">
+                <div class="gap-cat-label">Shoes</div>
+                <div class="gap-cat-bar"><div class="gap-cat-fill" style="width:50%"></div></div>
+                <div class="gap-cat-count">2/4</div>
+              </div>
+              <div class="gap-cat-row">
+                <div class="gap-cat-label">Dresses</div>
+                <div class="gap-cat-bar"><div class="gap-cat-fill healthy" style="width:67%"></div></div>
+                <div class="gap-cat-count">2/3</div>
+              </div>
+            </div>
+            <div>
+              <div class="eyebrow" style="margin-bottom:6px">Missing</div>
+              <p class="gap-insight">"A structured coat in dark chocolate or forest green — this one piece would anchor 12+ combinations and carry your palette from October through March."</p>
+              <p style="font-size:13px;color:var(--text-2);margin-bottom:24px;line-height:1.6">Generally, a lot of tops but not a versatile enough set of pants and bottoms. Outerwear is your biggest gap right now.</p>
+              <hr class="gap-divider">
+              <div class="eyebrow" style="margin-bottom:12px">Shop the Edit</div>
+              <div class="gap-shop">
+                <div class="gap-shop-item">
+                  <img class="gap-shop-img" src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/vogue-female-coat-young-glamour-woman-wearing-stylish-fashion-dress-fashion-model-studio.jpg" alt="Oversized Wool Coat">
+                  <div class="gap-shop-info">
+                    <div class="gs-brand">COS</div>
+                    <div class="gs-name">Oversized Wool Coat — Forest Green</div>
+                    <div class="gs-price">£195</div>
+                  </div>
+                </div>
+                <div class="gap-shop-item">
+                  <img class="gap-shop-img" src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/full-length-young-african-american-woman-stylish-maroon-suit-with-wide-leg-pants-posing.jpg" alt="Plum Midi Skirt">
+                  <div class="gap-shop-info">
+                    <div class="gs-brand">Reformation</div>
+                    <div class="gs-name">Plum Silk Midi Skirt</div>
+                    <div class="gs-price">$218</div>
+                  </div>
+                </div>
+                <div class="gap-shop-item">
+                  <img class="gap-shop-img" src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/young-woman-stylish-oversized-blazer-cap-exudes-confidence-charm-trendy-urban-setting.jpg" alt="Mustard Trousers">
+                  <div class="gap-shop-info">
+                    <div class="gs-brand">Everlane</div>
+                    <div class="gs-name">Mustard Wide-Leg Trousers</div>
+                    <div class="gs-price">$88</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MY SEASON -->
+    <div id="s-season" class="screen">
+      <div class="page-wrap">
+        <div style="margin-bottom:32px">
+          <h1 class="page-title">My Season</h1>
+          <p class="page-sub">Your complete color analysis guide</p>
+        </div>
+        <div class="season-layout">
+
+          <!-- LEFT COLUMN -->
+          <div class="season-col-left">
+            <div class="season-hero-card">
+              <div class="eyebrow">Autumn Family · Dark Sub-type</div>
+              <h2>Dark Autumn</h2>
+              <div class="archetype">"Deep, warm, and quietly dramatic."</div>
+              <div class="pal-row">
+                <div class="ps" style="background:#3C1A08"></div>
+                <div class="ps" style="background:#8C3A1C"></div>
+                <div class="ps" style="background:#2A4A2A"></div>
+                <div class="ps" style="background:#B8820A"></div>
+                <div class="ps" style="background:#4A1E3C"></div>
+              </div>
+            </div>
+
+            <div class="attr-row">
+              <div class="attr-chip"><div class="av">Warm</div><div class="ak">Undertone</div></div>
+              <div class="attr-chip"><div class="av">Dark</div><div class="ak">Value</div></div>
+              <div class="attr-chip"><div class="av">Rich</div><div class="ak">Chroma</div></div>
+            </div>
+
+            <div class="about-text">Like the last golden light before winter — intense, rich, and effortlessly bold. Dark Autumn sits at the intersection of True Autumn and Dark Winter: the deepest and most dramatic of the Autumn family. Your colouring carries authority without trying; its power is in depth, not brightness. Espresso, forest green, rust, dark camel, burgundy, deep olive, burnt sienna — these colours don't just suit you, they complete you.</div>
+
+            <div class="season-sec">
+              <h3>Your Features</h3>
+              <div class="trait-list">
+                <div class="trait-item"><div class="ti-label">Eyes</div><div class="ti-text">Dark hazel, warm dark brown, dark green, or warm black. Swirling patterns and iris freckles common. High contrast between iris and whites.</div></div>
+                <div class="trait-item"><div class="ti-label">Hair</div><div class="ti-text">Medium to dark golden brown, dark auburn, dark chocolate, or black-brown. Develops warm golden or red highlights in sun.</div></div>
+                <div class="trait-item"><div class="ti-label">Skin</div><div class="ti-text">Neutral to neutral-warm. Light to deep range. Golden or bronze undertones. Tans warmly and easily.</div></div>
+              </div>
+            </div>
+
+            <div class="season-sec">
+              <h3>Outfit Formula</h3>
+              <div class="formula-card">
+                <h4>Value Contrast</h4>
+                <p>Pair deep darks with warm mediums — dark chocolate with camel, forest green with mustard. Your high-contrast features need an outfit that can hold their own.</p>
+                <div class="combo-row">
+                  <div class="csw" style="background:#3C1A08"></div>
+                  <div class="csw" style="background:#9B7355"></div>
+                  <div class="csw" style="background:#B8820A"></div>
+                </div>
+                <div style="font-size:10px;color:var(--text-3);margin-top:6px">Dark chocolate · Camel · Mustard</div>
+              </div>
+              <div class="formula-card">
+                <h4>Earth + Accent</h4>
+                <p>Ground in a neutral (chocolate, camel, ivory), then add one Autumn accent — rust, forest, or teal. Three colors maximum.</p>
+                <div class="combo-row">
+                  <div class="csw" style="background:#6A2840"></div>
+                  <div class="csw" style="background:#EDD9BC"></div>
+                  <div class="csw" style="background:#9A6B18"></div>
+                </div>
+                <div style="font-size:10px;color:var(--text-3);margin-top:6px">Plum · Warm cream · Deep gold</div>
+              </div>
+            </div>
+
+            <div class="season-sec">
+              <h3>Dark Autumn vs. Dark Winter</h3>
+              <div class="compare-block"><div class="cb-title">You're Dark Autumn if…</div><div class="cb-desc">Gold flatters more than silver. Earthy, warm tones feel natural. Cool or icy colors feel stark rather than crisp. Your palette has an organic, burnished quality.</div><div class="compare-pals"><div class="cp" style="background:#3C1A08"></div><div class="cp" style="background:#8C3A1C"></div><div class="cp" style="background:#9B7355"></div><div class="cp" style="background:#2A4A2A"></div><div class="cp" style="background:#6A2840"></div></div></div>
+              <div class="compare-block" style="margin-top:10px"><div class="cb-title">Dark Winter looks like…</div><div class="cb-desc">Cool, blue-black pigments with icy clarity. Silver is the better metal. Pure black and white work. The palette is sharp and cool rather than rich and warm.</div><div class="compare-pals"><div class="cp" style="background:#1A1A2E"></div><div class="cp" style="background:#4A2060"></div><div class="cp" style="background:#2A3870"></div><div class="cp" style="background:#C0C0D0"></div><div class="cp" style="background:#6A2040"></div></div></div>
+            </div>
+
+            <div class="season-sec">
+              <h3>What to Avoid</h3>
+              <div class="avoid-list">
+                <div class="avoid-item"><div class="avoid-swatch" style="background:#E8E8F4"></div><div><p>Icy pastels</p><span>Too light and cool — creates a washed-out effect</span></div></div>
+                <div class="avoid-item"><div class="avoid-swatch" style="background:#F8F8F8"></div><div><p>Stark white</p><span>Swap for ivory, warm cream, or soft ecru</span></div></div>
+                <div class="avoid-item"><div class="avoid-swatch" style="background:#CC88CC"></div><div><p>Bright pink / fuchsia</p><span>Cool-toned — clashes with your warm undertone</span></div></div>
+                <div class="avoid-item"><div class="avoid-swatch" style="background:#B0B8C8"></div><div><p>Dusty blue / periwinkle</p><span>Too cool and muted — loses your warmth</span></div></div>
+                <div class="avoid-item"><div class="avoid-swatch" style="background:#C0C0C0"></div><div><p>Cool grey / silver</p><span>Replace with warm taupe, camel, or mushroom</span></div></div>
+              </div>
+            </div>
+
+            <div style="margin-top:24px">
+              <button class="btn btn-outline" style="width:100%;justify-content:center;" onclick="go('onboarding')">Change My Season</button>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN -->
+          <div class="season-col-right">
+            <div class="season-sec" style="margin-bottom:32px">
+              <h3>Your Full Palette</h3>
+
+              <div class="pal-group">
+                <div class="pal-group-lbl">Neutrals</div>
+                <div class="named-swatches">
+                  <div class="nswatch"><div class="ns-color" style="background:#1C1810"></div><div class="ns-name">Warm Black</div></div>
+                  <div class="nswatch"><div class="ns-color" style="background:#2A1408"></div><div class="ns-name">Espresso</div></div>
+                  <div class="nswatch"><div class="ns-color" style="background:#3C1A08"></div><div class="ns-name">Dark Chocolate</div></div>
+                  <div class="nswatch"><div class="ns-color" style="background:#4A4A28"></div><div class="ns-name">Dark Olive</div></div>
+                  <div class="nswatch"><div class="ns-color" style="background:#9B7355"></div><div class="ns-name">Camel</div></div>
+                  <div class="nswatch"><div class="ns-color" style="background:#D4B898"></div><div class="ns-name">Warm Beige</div></div>
+                  <div class="nswatch"><div class="ns-color" style="background:#EDD9BC"></div><div class="ns-name">Warm Cream</div></div>
+                </div>
+                <p style="font-size:11px;color:var(--text-3);margin-top:9px">Dark chocolate replaces black. Warm cream replaces white. Avoid cool grey.</p>
+              </div>
+
+              <div class="pal-group">
+                <div class="pal-group-lbl">Reds &amp; Oranges</div>
+                <div class="named-swatches">
+                  <div class="nswatch"><div class="ns-color" style="background:#A32818"></div><div class="ns-name">Tomato Red</div></div>
+                  <div class="nswatch"><div class="ns-color" style="background:#8C3A1C"></div><div class="ns-name">Rust</div></div>
+                  <div class="nswatch"><div class="ns-color" style="background:#6B1E22"></div><div class="ns-name">Maroon</div></div>
+                  <div class="nswatch"><div class="ns-color" style="background:#B8693A"></div><div class="ns-name">Terracotta</div></div>
+                  <div class="nswatch"><div class="ns-color" style="background:#D4826A"></div><div class="ns-name">Deep Peach</div></div>
+                </div>
+              </div>
+
+              <div class="pal-group">
+                <div class="pal-group-lbl">Greens</div>
+                <div class="named-swatches">
+                  <div class="nswatch"><div class="ns-color" style="background:#2A4A2A"></div><div class="ns-name">Forest Green</div></div>
+                  <div class="nswatch"><div class="ns-color" style="background:#3D5A3A"></div><div class="ns-name">Basil</div></div>
+                  <div class="nswatch"><div class="ns-color" style="background:#5C6030"></div><div class="ns-name">Olive</div></div>
+                  <div class="nswatch"><div class="ns-color" style="background:#2A5858"></div><div class="ns-name">Dark Teal</div></div>
+                </div>
+              </div>
+
+              <div class="pal-group">
+                <div class="pal-group-lbl">Yellows &amp; Golds</div>
+                <div class="named-swatches">
+                  <div class="nswatch"><div class="ns-color" style="background:#B8820A"></div><div class="ns-name">Mustard</div></div>
+                  <div class="nswatch"><div class="ns-color" style="background:#9A6B18"></div><div class="ns-name">Deep Gold</div></div>
+                  <div class="nswatch"><div class="ns-color" style="background:#C48C10"></div><div class="ns-name">Curry Yellow</div></div>
+                </div>
+              </div>
+
+              <div class="pal-group">
+                <div class="pal-group-lbl">Purples</div>
+                <div class="named-swatches">
+                  <div class="nswatch"><div class="ns-color" style="background:#4A1E3C"></div><div class="ns-name">Aubergine</div></div>
+                  <div class="nswatch"><div class="ns-color" style="background:#6A2840"></div><div class="ns-name">Plum</div></div>
+                  <div class="nswatch"><div class="ns-color" style="background:#3A1430"></div><div class="ns-name">Deep Plum</div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="season-sec">
+              <h3>Metals &amp; Stones</h3>
+              <div class="metals-row">
+                <div class="metal"><div class="mdot" style="background:linear-gradient(135deg,#B8860B,#FFD700,#B8860B)"></div><span>Gold</span></div>
+                <div class="metal"><div class="mdot" style="background:linear-gradient(135deg,#8B6A2A,#C8A040,#8B6A2A)"></div><span>Bronze</span></div>
+                <div class="metal"><div class="mdot" style="background:linear-gradient(135deg,#A0785A,#D4A070,#A0785A)"></div><span>Copper</span></div>
+              </div>
+              <p style="font-size:11px;color:var(--text-3);margin-bottom:10px">Choose antiqued, hammered, or oxidised finishes. Avoid cool silver.</p>
+              <div class="stones-row">
+                <div class="stone-chip"><div class="stone-dot" style="background:#B94040"></div><span>Carnelian</span></div>
+                <div class="stone-chip"><div class="stone-dot" style="background:#8B1A1A"></div><span>Garnet</span></div>
+                <div class="stone-chip"><div class="stone-dot" style="background:#8B6A2A"></div><span>Jasper</span></div>
+                <div class="stone-chip"><div class="stone-dot" style="background:#1A6B3C"></div><span>Emerald</span></div>
+                <div class="stone-chip"><div class="stone-dot" style="background:#2A6868"></div><span>Malachite</span></div>
+              </div>
+            </div>
+
+            <div class="season-sec">
+              <h3>Makeup</h3>
+              <div class="makeup-grid">
+                <div class="makeup-card">
+                  <div class="mk-label">Foundation</div>
+                  <div class="mk-name">Neutral-warm beige</div>
+                  <div class="mk-desc">Avoid pink or cool undertones. Look for golden or olive-warm bases.</div>
+                  <div class="makeup-swatches">
+                    <div class="mk-swatch" style="background:#D4A878"></div>
+                    <div class="mk-swatch" style="background:#C49060"></div>
+                    <div class="mk-swatch" style="background:#A87048"></div>
+                  </div>
+                </div>
+                <div class="makeup-card">
+                  <div class="mk-label">Lip</div>
+                  <div class="mk-name">Deep reds &amp; plums</div>
+                  <div class="mk-desc">Tomato red, brick, maroon, deep plum. Avoid cool pinks.</div>
+                  <div class="makeup-swatches">
+                    <div class="mk-swatch" style="background:#A32818"></div>
+                    <div class="mk-swatch" style="background:#8C3A1C"></div>
+                    <div class="mk-swatch" style="background:#6A2840"></div>
+                  </div>
+                </div>
+                <div class="makeup-card">
+                  <div class="mk-label">Eye</div>
+                  <div class="mk-name">Warm &amp; smoky browns</div>
+                  <div class="mk-desc">Chocolate, bronze, burnt sienna, deep forest for liner.</div>
+                  <div class="makeup-swatches">
+                    <div class="mk-swatch" style="background:#3C1A08"></div>
+                    <div class="mk-swatch" style="background:#8C3A1C"></div>
+                    <div class="mk-swatch" style="background:#9A6B18"></div>
+                  </div>
+                </div>
+                <div class="makeup-card">
+                  <div class="mk-label">Blush &amp; Bronzer</div>
+                  <div class="mk-name">Terracotta &amp; bronze</div>
+                  <div class="mk-desc">Warm terracotta blush, bronze highlighter. Avoid cool pinks or silvers.</div>
+                  <div class="makeup-swatches">
+                    <div class="mk-swatch" style="background:#C4836A"></div>
+                    <div class="mk-swatch" style="background:#B8693A"></div>
+                    <div class="mk-swatch" style="background:#9A6B18"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="season-sec">
+              <h3>Pattern Guide</h3>
+              <div class="pat-row">
+                <div class="pat-item"><div class="pat-icon yes">✓</div><div class="pat-txt"><div class="pt-title">Bold stylised botanical</div><div class="pt-desc">Large autumn leaves, paisley, oval shapes — organic and loosely arranged.</div></div><div class="pat-ref"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/seasonal-autumn-fashion-modern-young-woman-wearing-fashionable-warm-clothes-posing.jpg" alt="Botanical example"></div></div>
+                <div class="pat-item"><div class="pat-icon yes">✓</div><div class="pat-txt"><div class="pt-title">High-contrast arrangements</div><div class="pt-desc">Dark background with warm-toned motifs. Reflects your natural contrast.</div></div><div class="pat-ref"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/gold-chain-accessory-with-white-shirt-jacket-business-woman-style.jpg" alt="High contrast example"></div></div>
+                <div class="pat-item"><div class="pat-icon no">✕</div><div class="pat-txt"><div class="pt-title">Geometric / stiff prints</div><div class="pt-desc">Fights your organic warmth. Avoid rigid lines and cool-toned plaids.</div></div><div class="pat-ref"><img src="/Users/danirosefish/Documents/claude%20code%20projects/hue/hue-images/attractive-girl-cozy-knitted-woolen-colorful-dress.jpg" alt="Geometric avoid example"></div></div>
+                <div class="pat-item"><div class="pat-icon no">✕</div><div class="pat-txt"><div class="pt-title">Small dense patterns</div><div class="pt-desc">Get lost at your contrast level. Patterns need scale to register.</div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="s-settings" class="screen">
+      <div class="page-wrap">
+        <div style="margin-bottom:32px">
+          <h1 class="page-title">Settings</h1>
+          <p class="page-sub">Manage your Hue Harmony preferences</p>
+        </div>
+        <div class="settings-layout">
+          <div class="settings-section">
+            <h3>Account</h3>
+            <div class="setting-row"><div class="setting-info"><div class="si-label">Danielle</div><div class="si-sub">danielle@email.com</div></div><span class="setting-value">Edit →</span></div>
+            <div class="setting-row" onclick="go('onboarding')" style="cursor:pointer"><div class="setting-info"><div class="si-label">My Season</div><div class="si-sub">Dark Autumn · Autumn family</div></div><span class="setting-value">Change →</span></div>
+          </div>
+          <div class="settings-section">
+            <h3>Notifications</h3>
+            <div class="setting-row"><div class="setting-info"><div class="si-label">Weekly Edit</div><div class="si-sub">New picks curated for your palette each week</div></div><button class="s-toggle on" onclick="this.classList.toggle('on')"></button></div>
+            <div class="setting-row"><div class="setting-info"><div class="si-label">New In Your Palette</div><div class="si-sub">Alert when brands add season-aligned pieces</div></div><button class="s-toggle on" onclick="this.classList.toggle('on')"></button></div>
+            <div class="setting-row"><div class="setting-info"><div class="si-label">Gap Reminders</div><div class="si-sub">Remind me to check my capsule gaps monthly</div></div><button class="s-toggle" onclick="this.classList.toggle('on')"></button></div>
+          </div>
+          <div class="settings-section">
+            <h3>Preferences</h3>
+            <div class="setting-row"><div class="setting-info"><div class="si-label">Currency</div><div class="si-sub">Used for price display across the app</div></div><span class="setting-value">GBP (£)</span></div>
+            <div class="setting-row"><div class="setting-info"><div class="si-label">Body Type</div><div class="si-sub">Coming in Phase 2 — fit + proportion intelligence</div></div><span class="setting-value" style="color:var(--text-3)">Soon</span></div>
+            <div class="setting-row"><div class="setting-info"><div class="si-label">Style Preferences</div><div class="si-sub">Minimalist · Feminine · Relaxed · Structured</div></div><span class="setting-value">Edit →</span></div>
+          </div>
+          <div class="settings-section">
+            <h3>Privacy</h3>
+            <div class="setting-row"><div class="setting-info"><div class="si-label">Usage Analytics</div><div class="si-sub">Help improve Hue Harmony with anonymous data</div></div><button class="s-toggle on" onclick="this.classList.toggle('on')"></button></div>
+            <div class="setting-row"><div class="setting-info"><div class="si-label">Data Export</div><div class="si-sub">Download your wardrobe and preferences</div></div><span class="setting-value">Request →</span></div>
+            <div class="danger-row"><p>Delete Account</p><div class="si-sub" style="color:#EF4444;font-size:11px;margin-top:3px">Permanently removes all your data</div></div>
+          </div>
+          <div class="settings-section">
+            <h3>About</h3>
+            <div class="setting-row"><div class="setting-info"><div class="si-label">Hue Harmony</div><div class="si-sub">The Hue Edit · Version 1.0</div></div><span class="setting-value" style="color:var(--text-3)">MVP</span></div>
+            <div class="setting-row"><div class="setting-info"><div class="si-label">Send Feedback</div><div class="si-sub">Help shape what we build next</div></div><span class="setting-value">→</span></div>
+            <div class="setting-row"><div class="setting-info"><div class="si-label">Terms &amp; Privacy Policy</div></div><span class="setting-value">→</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+let currentSeason = 'dark-autumn';
+let currentSeasonName = 'Dark Autumn';
+
+function pickSeason(el, key, family, name) {
+  document.querySelectorAll('.sopt').forEach(o => o.classList.remove('on'));
+  el.classList.add('on');
+  currentSeason = key;
+  currentSeasonName = name;
+  document.getElementById('app').setAttribute('data-season', key);
+}
+
+function enterApp() {
+  document.getElementById('app').setAttribute('data-season', currentSeason);
+  document.getElementById('home-season-lbl').textContent = currentSeasonName;
+  document.getElementById('sb-season-name').textContent = currentSeasonName;
+  document.getElementById('sb-foot-name').textContent = currentSeasonName;
+  go('home');
+}
+
+function go(name) {
+  const screen = document.getElementById('s-' + name);
+  if (!screen) return;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('on'));
+  screen.classList.add('active');
+  const nb = document.getElementById('nav-' + name);
+  if (nb) nb.classList.add('on');
+  window.scrollTo(0, 0);
+}
+function wardTab(btn, panel) {
+  btn.closest('.ward-tab-bar').querySelectorAll('.wtab').forEach(t => t.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('#s-wardrobe .wt-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('wt-' + panel).classList.add('active');
+}
+
+function discoverFilter(btn, tag) {
+  document.querySelectorAll('#discover-chips .chip').forEach(c => c.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.bcard-new').forEach(card => {
+    card.style.display = (tag === 'all' || card.dataset.tags.split(' ').includes(tag)) ? '' : 'none';
+  });
+}
+function discoverSearch(q) {
+  const query = q.toLowerCase().trim();
+  document.querySelectorAll('.bcard-new').forEach(card => {
+    card.style.display = (!query || card.dataset.brand.includes(query)) ? '' : 'none';
+  });
+  if (!query) {
+    const activeChip = document.querySelector('#discover-chips .chip.on');
+    if (activeChip) discoverFilter(activeChip, activeChip.textContent.toLowerCase());
+  }
+}
+function wardrobeUpload(input) {
+  const files = input.files;
+  if (!files.length) return;
+  const grid = document.getElementById('ward-grid');
+  const addBtn = grid.querySelector('.wthumb-add');
+  Array.from(files).forEach(file => {
+    const url = URL.createObjectURL(file);
+    const el = document.createElement('div');
+    el.className = 'wthumb';
+    el.dataset.cat = 'tops';
+    el.innerHTML = `<img src="${url}" alt="">`;
+    grid.insertBefore(el, addBtn);
+  });
+  input.value = '';
+}
+function wardrobeFilter(btn, cat) {
+  btn.closest('.chip-row').querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('#ward-grid .wthumb').forEach(item => {
+    item.style.display = (cat === 'all' || item.dataset.cat === cat) ? '' : 'none';
+  });
+}
+function capsuleFilter(btn, cat) {
+  btn.closest('.cat-tabs').querySelectorAll('.ctab').forEach(c => c.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('#capsule-grid .pcard').forEach(card => {
+    card.style.display = (cat === 'all' || card.dataset.cat === cat) ? '' : 'none';
+  });
+}
+
+document.querySelectorAll('.heart').forEach(btn => {
+  btn.addEventListener('click', e => { e.stopPropagation(); btn.classList.toggle('saved'); });
+});
+</script>
+</body>
+</html>
